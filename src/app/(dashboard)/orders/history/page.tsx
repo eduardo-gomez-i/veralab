@@ -1,10 +1,4 @@
-import History from '@/pages/History';
-import type { Metadata } from 'next';
+"use client";
 
-export const metadata: Metadata = {
-  title: 'Historial - Sistema de Pedidos',
-};
+export { default } from '@/pages/History';
 
-export default function HistoryPage() {
-  return <History />;
-}

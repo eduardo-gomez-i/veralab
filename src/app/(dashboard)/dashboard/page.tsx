@@ -1,10 +1,4 @@
-import Dashboard from '@/pages/Dashboard';
-import type { Metadata } from 'next';
+"use client";
 
-export const metadata: Metadata = {
-  title: 'Dashboard - Sistema de Pedidos',
-};
+export { default } from '@/pages/Dashboard';
 
-export default function DashboardPage() {
-  return <Dashboard />;
-}

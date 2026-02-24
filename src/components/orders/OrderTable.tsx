@@ -16,6 +16,7 @@ import { useOrders } from '@/contexts/OrderContext';
 import { useRef, useState } from 'react';
 import { Loader2, Paperclip } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useToast } from '@/hooks/use-toast';
 
 interface OrderTableProps {
   orders: Order[];
@@ -34,6 +35,7 @@ export const OrderTable = ({ orders }: OrderTableProps) => {
   const [paymentDate, setPaymentDate] = useState<string>('');
   const [paymentReceipt, setPaymentReceipt] = useState<File | null>(null);
   const [paymentLoading, setPaymentLoading] = useState(false);
+  const { toast } = useToast();
 
   const openDetails = (order: Order) => {
     setSelected(order);
@@ -73,7 +75,9 @@ export const OrderTable = ({ orders }: OrderTableProps) => {
               <TableHead>Estado</TableHead>
               <TableHead>Saldo</TableHead>
               <TableHead>Adjunto</TableHead>
-              {user?.role === 'admin' && <TableHead>Acciones</TableHead>}
+              {user?.role === 'admin' && (
+                <TableHead className="w-[220px] text-right">Acciones</TableHead>
+              )}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -135,64 +139,69 @@ export const OrderTable = ({ orders }: OrderTableProps) => {
                     </TableCell>
                     {user?.role === 'admin' && (
                       <TableCell>
-                        <Select
-                          defaultValue={order.status}
-                          onValueChange={(val) => handleStatusChange(order.id, val as OrderStatus)}
-                          disabled={updatingId === order.id}
-                        >
-                          <SelectTrigger className="w-[130px] h-8">
-                            {updatingId === order.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin mx-auto" />
-                            ) : (
-                              <SelectValue />
-                            )}
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="pendiente">Pendiente</SelectItem>
-                            <SelectItem value="en_proceso">En Proceso</SelectItem>
-                            <SelectItem value="completado">Completado</SelectItem>
-                            <SelectItem value="entregado">Entregado</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="ml-2"
-                          onClick={() => openDetails(order)}
-                        >
-                          Detalles
-                        </Button>
-                        <input
-                          type="file"
-                          accept="image/*,.pdf,.docx"
-                          className="hidden"
-                          ref={(el) => {
-                            fileInputsRef.current[order.id] = el;
-                          }}
-                          onChange={async (e) => {
-                            const file = e.target.files?.[0];
-                            if (!file) return;
-                            setUpdatingId(order.id);
-                            try {
-                              await updateOrderAttachment(order.id, file);
-                            } finally {
-                              setUpdatingId(null);
-                              if (fileInputsRef.current[order.id]) {
-                                fileInputsRef.current[order.id]!.value = '';
-                              }
+                        <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-end">
+                          <Select
+                            defaultValue={order.status}
+                            onValueChange={(val) =>
+                              handleStatusChange(order.id, val as OrderStatus)
                             }
-                          }}
-                        />
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="ml-2"
-                          onClick={() => fileInputsRef.current[order.id]?.click()}
-                          disabled={updatingId === order.id}
-                        >
-                          <Paperclip className="h-4 w-4 mr-1" />
-                          Adjuntar
-                        </Button>
+                            disabled={updatingId === order.id}
+                          >
+                            <SelectTrigger className="w-full sm:w-[140px] h-8">
+                              {updatingId === order.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin mx-auto" />
+                              ) : (
+                                <SelectValue />
+                              )}
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="pendiente">Pendiente</SelectItem>
+                              <SelectItem value="en_proceso">En Proceso</SelectItem>
+                              <SelectItem value="completado">Completado</SelectItem>
+                              <SelectItem value="entregado">Entregado</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <div className="flex justify-end gap-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openDetails(order)}
+                            >
+                              Detalles
+                            </Button>
+                            <input
+                              type="file"
+                              accept="image/*,.pdf,.docx"
+                              className="hidden"
+                              ref={(el) => {
+                                fileInputsRef.current[order.id] = el;
+                              }}
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                setUpdatingId(order.id);
+                                try {
+                                  await updateOrderAttachment(order.id, file);
+                                } finally {
+                                  setUpdatingId(null);
+                                  if (fileInputsRef.current[order.id]) {
+                                    fileInputsRef.current[order.id]!.value = '';
+                                  }
+                                }
+                              }}
+                            />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() =>
+                                fileInputsRef.current[order.id]?.click()
+                              }
+                              disabled={updatingId === order.id}
+                            >
+                              <Paperclip className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
                       </TableCell>
                     )}
                   </TableRow>
@@ -405,7 +414,14 @@ export const OrderTable = ({ orders }: OrderTableProps) => {
                     size="sm"
                     onClick={async () => {
                       if (!selected) return;
-                      if (!paymentAmount) return;
+                      if (!paymentAmount) {
+                        toast({
+                          variant: 'destructive',
+                          title: 'Monto requerido',
+                          description: 'Debes ingresar un monto para el pago.',
+                        });
+                        return;
+                      }
                       setPaymentLoading(true);
                       try {
                         const form = new FormData();
@@ -419,9 +435,27 @@ export const OrderTable = ({ orders }: OrderTableProps) => {
                         if (paymentReceipt) {
                           form.append('receipt', paymentReceipt);
                         }
-                        await fetch(`/api/orders/${selected.id}/payments`, {
-                          method: 'POST',
-                          body: form,
+                        const res = await fetch(
+                          `/api/orders/${selected.id}/payments`,
+                          {
+                            method: 'POST',
+                            body: form,
+                          }
+                        );
+                        if (!res.ok) {
+                          const err = await res.json().catch(() => null);
+                          toast({
+                            variant: 'destructive',
+                            title: 'Error al registrar pago',
+                            description:
+                              err?.error ||
+                              'No se pudo registrar el pago. Intenta nuevamente.',
+                          });
+                          return;
+                        }
+                        toast({
+                          title: 'Pago registrado',
+                          description: 'El pago parcial se registró correctamente.',
                         });
                         setPaymentAmount('');
                         setPaymentDate('');

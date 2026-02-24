@@ -13,10 +13,22 @@ const History = () => {
   const { orders, refreshOrders, setFilters } = useOrders();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [initializedFromQuery, setInitializedFromQuery] = useState(false);
 
   useEffect(() => {
     refreshOrders();
   }, [refreshOrders]);
+
+  useEffect(() => {
+    if (initializedFromQuery) return;
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const orderId = params.get('orderId');
+    if (orderId) {
+      setSearchTerm(orderId);
+    }
+    setInitializedFromQuery(true);
+  }, [initializedFromQuery]);
 
   useEffect(() => {
     const filters: any = {};

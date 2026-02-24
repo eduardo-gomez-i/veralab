@@ -63,6 +63,19 @@ export const Sidebar = () => {
             Historial
           </Link>
 
+          <Link
+            href="/payments"
+            className={cn(
+              "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+              pathname === "/payments"
+                ? "bg-blue-50 text-blue-600"
+                : "text-gray-700 hover:bg-gray-100"
+            )}
+          >
+            <History size={20} />
+            Pagos
+          </Link>
+
           {user.role === 'admin' && (
             <>
               <Link

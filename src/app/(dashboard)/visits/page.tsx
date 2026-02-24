@@ -320,4 +320,30 @@ export default function VisitsPage() {
               </TableRow>
             ) : (
               visits.map((visit) => (
-                <Tab
+                <TableRow key={visit.id}>
+                  <TableCell>{formatDate(visit.date)}</TableCell>
+                  <TableCell>{visit.title}</TableCell>
+                  <TableCell>
+                    {visit.dentists.map((d) => d.name).join(', ') || '—'}
+                  </TableCell>
+                  <TableCell className="max-w-xs truncate">
+                    {visit.notes || '—'}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => handleDelete(visit.id)}
+                    >
+                      <Trash2 className="h-4 w-4 text-red-600" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+}

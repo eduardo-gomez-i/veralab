@@ -222,4 +222,13 @@ const NewOrder = () => {
                 ) : (
                   'Crear Pedido'
                 )}
-              <
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default NewOrder;

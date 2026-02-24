@@ -1,10 +1,4 @@
-import NewOrder from '@/pages/NewOrder';
-import type { Metadata } from 'next';
+"use client";
 
-export const metadata: Metadata = {
-  title: 'Nuevo Pedido - Sistema de Pedidos',
-};
+export { default } from '@/pages/NewOrder';
 
-export default function NewOrderPage() {
-  return <NewOrder />;
-}
