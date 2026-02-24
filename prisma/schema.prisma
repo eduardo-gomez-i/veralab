@@ -1,0 +1,64 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  password  String
+  role      String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  orders    Order[]
+  visits    Visit[]  @relation("DentistVisits")
+}
+
+model Order {
+  id             String   @id @default(uuid())
+  patientName    String
+  prosthesisType String
+  material       String
+  specifications String   @db.Text
+  deliveryDate   DateTime
+  status         String
+  notes          String?  @db.Text
+  priority       String
+  attachmentUrl  String?
+  totalPrice     Decimal? @db.Decimal(10, 2)
+  estimatedDeliveryDate DateTime?
+  
+  dentistId      String
+  dentist        User     @relation(fields: [dentistId], references: [id])
+  dentistName    String
+
+  payments       Payment[]
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Payment {
+  id         String   @id @default(uuid())
+  orderId    String
+  order      Order    @relation(fields: [orderId], references: [id])
+  amount     Decimal  @db.Decimal(10, 2)
+  paidAt     DateTime @default(now())
+  receiptUrl String?
+  createdAt  DateTime @default(now())
+}
+
+model Visit {
+  id          Int      @id @default(autoincrement())
+  date        DateTime
+  title       String
+  notes       String?  @db.Text
+  dentists    User[]   @relation("DentistVisits")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

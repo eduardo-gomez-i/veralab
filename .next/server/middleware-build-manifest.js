@@ -1,0 +1,60 @@
+globalThis.__BUILD_MANIFEST = {
+  "pages": {
+    "/Dashboard": [
+      "static/chunks/e4999ee1c9c753a2.js",
+      "static/chunks/940fe72295b40cc4.js",
+      "static/chunks/2c9fd5b354050084.js",
+      "static/chunks/5c31872c71f39cfd.js",
+      "static/chunks/turbopack-67ab80becac4279f.js"
+    ],
+    "/History": [
+      "static/chunks/c27114e53b9691d3.js",
+      "static/chunks/24852d3b9b2fcfeb.js",
+      "static/chunks/5c31872c71f39cfd.js",
+      "static/chunks/3fa3df61e7d86c92.js",
+      "static/chunks/turbopack-98aa00b40ae120a6.js"
+    ],
+    "/Login": [
+      "static/chunks/b14bd0b9afbc2085.js",
+      "static/chunks/472b718a1e7426b3.js",
+      "static/chunks/5c31872c71f39cfd.js",
+      "static/chunks/7fc6e389a5d14b34.js",
+      "static/chunks/turbopack-3ca347792d34c007.js"
+    ],
+    "/NewOrder": [
+      "static/chunks/84c9678e364e7e47.js",
+      "static/chunks/472b718a1e7426b3.js",
+      "static/chunks/0cfc0a9da9acaa03.js",
+      "static/chunks/5c31872c71f39cfd.js",
+      "static/chunks/3fa3df61e7d86c92.js",
+      "static/chunks/turbopack-92f0f645150b643c.js"
+    ],
+    "/_app": [
+      "static/chunks/7fc73442e5eb9d4d.js",
+      "static/chunks/5c31872c71f39cfd.js",
+      "static/chunks/turbopack-81622c271161cc77.js"
+    ],
+    "/_error": [
+      "static/chunks/c56816c945649aa8.js",
+      "static/chunks/5c31872c71f39cfd.js",
+      "static/chunks/turbopack-639c18e5adafead4.js"
+    ]
+  },
+  "devFiles": [],
+  "polyfillFiles": [
+    "static/chunks/a6dad97d9634a72d.js"
+  ],
+  "lowPriorityFiles": [],
+  "rootMainFiles": [
+    "static/chunks/d59f830a2b8e768c.js",
+    "static/chunks/ddd0aadb03882a1e.js",
+    "static/chunks/f2f58a7e93290fbb.js",
+    "static/chunks/d4cf4caae891f664.js",
+    "static/chunks/82abf2d65f5428ae.js",
+    "static/chunks/turbopack-0f1e6b28047193bd.js"
+  ]
+};
+globalThis.__BUILD_MANIFEST.lowPriorityFiles = [
+"/static/" + process.env.__NEXT_BUILD_ID + "/_buildManifest.js",
+"/static/" + process.env.__NEXT_BUILD_ID + "/_ssgManifest.js"
+];
