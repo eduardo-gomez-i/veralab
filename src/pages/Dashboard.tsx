@@ -1,53 +1,102 @@
 "use client";
 
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrders } from '@/contexts/OrderContext';
 import { OrderCard } from '@/components/orders/OrderCard';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Loader2 } from 'lucide-react';
+import { PlusCircle, Loader2, TrendingUp, CreditCard, DollarSign, Package, CheckCircle2, Clock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { DatePickerWithRange } from '@/components/ui/date-range-picker';
+import { DateRange } from 'react-day-picker';
+import { isWithinInterval, startOfDay, endOfDay } from 'date-fns';
+import { formatCurrency } from '@/lib/utils';
 
 const Dashboard = () => {
   const { user } = useAuth();
   const { orders, loading, refreshOrders } = useOrders();
   const router = useRouter();
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
 
   useEffect(() => {
     refreshOrders();
   }, [refreshOrders]);
 
-  const activeOrders = orders.filter(
+  const activeOrders = useMemo(() => orders.filter(
     order => order.status === 'pendiente' || order.status === 'en_proceso'
-  );
+  ), [orders]);
 
-  const getPaidAmount = (totalOrders: typeof orders[number][]) => {
-    return totalOrders.reduce((sum, order) => {
-      if (!order.payments || order.payments.length === 0) return sum;
-      const paid = order.payments.reduce(
-        (acc, p) => acc + Number(p.amount),
-        0
-      );
-      return sum + paid;
+  // Filter orders by creation date
+  const filteredOrders = useMemo(() => {
+    if (!dateRange || !dateRange.from) return orders;
+    
+    const start = startOfDay(dateRange.from);
+    const end = endOfDay(dateRange.to || dateRange.from);
+
+    return orders.filter(order => {
+      const date = new Date(order.createdAt);
+      return isWithinInterval(date, { start, end });
+    });
+  }, [orders, dateRange]);
+
+  // KPI Calculations
+  const kpis = useMemo(() => {
+    const totalOrders = filteredOrders.length;
+    const activeOrdersCount = activeOrders.length;
+    
+    const totalSales = filteredOrders.reduce((sum, order) => {
+      return sum + (order.totalPrice ? Number(order.totalPrice) : 0);
     }, 0);
-  };
 
-  const pendingDebt = useMemo(() => {
-    if (!user || user.role !== 'dentista') return 0;
+    // Payments made within the selected date range (Cash Flow)
+    // We look at ALL orders, but filter payments by date
+    const cashFlow = orders.reduce((sum, order) => {
+      if (!order.payments) return sum;
+      
+      const paymentsInPeriod = order.payments.filter(payment => {
+        if (!dateRange || !dateRange.from) return true;
+        const paymentDate = new Date(payment.paidAt);
+        const start = startOfDay(dateRange.from);
+        const end = endOfDay(dateRange.to || dateRange.from);
+        return isWithinInterval(paymentDate, { start, end });
+      });
+
+      return sum + paymentsInPeriod.reduce((acc, p) => acc + Number(p.amount), 0);
+    }, 0);
+
+    const completedOrders = filteredOrders.filter(
+      o => o.status === 'completado' || o.status === 'entregado'
+    ).length;
+
+    // Pending debt is usually a snapshot of "now", so we don't typically filter it by date range unless we reconstruct history.
+    // For simplicity, we'll show the current total pending debt of the filtered orders (outstanding balance of sales in period).
+    const periodOutstanding = filteredOrders.reduce((sum, order) => {
+      const total = order.totalPrice ? Number(order.totalPrice) : 0;
+      const paid = order.payments ? order.payments.reduce((acc, p) => acc + Number(p.amount), 0) : 0;
+      return sum + Math.max(0, total - paid);
+    }, 0);
+
+    return {
+      totalOrders,
+      activeOrdersCount,
+      totalSales,
+      cashFlow,
+      completedOrders,
+      periodOutstanding
+    };
+  }, [filteredOrders, orders, dateRange, activeOrders]);
+
+  const pendingDebtTotal = useMemo(() => {
+     // Global pending debt (current snapshot)
     return orders.reduce((sum, order) => {
       if (!order.totalPrice) return sum;
       const total = Number(order.totalPrice);
-      const paid =
-        order.payments && order.payments.length > 0
-          ? order.payments.reduce(
-              (acc, p) => acc + Number(p.amount),
-              0
-            )
-          : 0;
+      const paid = order.payments ? order.payments.reduce((acc, p) => acc + Number(p.amount), 0) : 0;
       const remaining = total - paid;
       return remaining > 0 ? sum + remaining : sum;
     }, 0);
-  }, [orders, user]);
+  }, [orders]);
+
 
   if (loading && orders.length === 0) {
     return (
@@ -59,42 +108,131 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Hola, {user?.name}</h1>
           <p className="text-gray-500">Bienvenido a tu panel de control</p>
         </div>
-        {user?.role === 'dentista' && (
-          <Button onClick={() => router.push('/orders/new')} className="bg-blue-600 hover:bg-blue-700">
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Nuevo Pedido
-          </Button>
-        )}
+        <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+          <DatePickerWithRange date={dateRange} setDate={setDateRange} className="w-full md:w-auto" />
+          {user?.role === 'dentista' && (
+            <Button onClick={() => router.push('/orders/new')} className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto">
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Nuevo Pedido
+            </Button>
+          )}
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
-        <div className="bg-white p-4 rounded-lg shadow-sm border">
-          <p className="text-sm text-gray-500 font-medium">Pedidos Activos</p>
-          <p className="text-3xl font-bold text-blue-600">{activeOrders.length}</p>
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* KPI 1: Pedidos Generados (Both) */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border flex flex-col justify-between">
+          <div className="flex justify-between items-start mb-2">
+            <div>
+              <p className="text-sm font-medium text-gray-500">Pedidos Generados</p>
+              <h3 className="text-2xl font-bold text-gray-900 mt-1">{kpis.totalOrders}</h3>
+            </div>
+            <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
+              <Package size={20} />
+            </div>
+          </div>
+          <div className="text-xs text-gray-500 mt-2">
+            {dateRange ? 'En el periodo seleccionado' : 'Histórico total'}
+          </div>
         </div>
-        <div className="bg-white p-4 rounded-lg shadow-sm border">
-          <p className="text-sm text-gray-500 font-medium">Pedidos Totales</p>
-          <p className="text-3xl font-bold text-gray-900">{orders.length}</p>
-        </div>
-        <div className="bg-white p-4 rounded-lg shadow-sm border">
-          <p className="text-sm text-gray-500 font-medium">Completados</p>
-          <p className="text-3xl font-bold text-green-600">
-            {orders.filter(o => o.status === 'completado' || o.status === 'entregado').length}
-          </p>
-        </div>
-        {user?.role === 'dentista' && (
-          <div className="bg-white p-4 rounded-lg shadow-sm border">
-            <p className="text-sm text-gray-500 font-medium">Saldo pendiente</p>
-            <p className="text-3xl font-bold text-red-600">
-              $ {pendingDebt.toFixed(2)}
-            </p>
+
+        {/* KPI 2: Admin -> Ventas Totales, Dentista -> Pedidos Activos */}
+        {user?.role === 'admin' ? (
+          <div className="bg-white p-6 rounded-xl shadow-sm border flex flex-col justify-between">
+            <div className="flex justify-between items-start mb-2">
+              <div>
+                <p className="text-sm font-medium text-gray-500">Ventas Totales</p>
+                <h3 className="text-2xl font-bold text-gray-900 mt-1">
+                  {formatCurrency(kpis.totalSales)}
+                </h3>
+              </div>
+              <div className="p-2 bg-green-50 rounded-lg text-green-600">
+                <TrendingUp size={20} />
+              </div>
+            </div>
+            <div className="text-xs text-gray-500 mt-2">
+              Valor de pedidos creados
+            </div>
+          </div>
+        ) : (
+          <div className="bg-white p-6 rounded-xl shadow-sm border flex flex-col justify-between">
+            <div className="flex justify-between items-start mb-2">
+              <div>
+                <p className="text-sm font-medium text-gray-500">Pedidos Activos</p>
+                <h3 className="text-2xl font-bold text-blue-600 mt-1">
+                  {kpis.activeOrdersCount}
+                </h3>
+              </div>
+              <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600">
+                <Clock size={20} />
+              </div>
+            </div>
+            <div className="text-xs text-gray-500 mt-2">
+              En proceso actualmente
+            </div>
           </div>
         )}
+
+        {/* KPI 3: Admin -> Cobrado (Flujo), Dentista -> Pedidos Completados */}
+        {user?.role === 'admin' ? (
+          <div className="bg-white p-6 rounded-xl shadow-sm border flex flex-col justify-between">
+            <div className="flex justify-between items-start mb-2">
+              <div>
+                <p className="text-sm font-medium text-gray-500">Cobrado (Flujo)</p>
+                <h3 className="text-2xl font-bold text-gray-900 mt-1">
+                  {formatCurrency(kpis.cashFlow)}
+                </h3>
+              </div>
+              <div className="p-2 bg-emerald-50 rounded-lg text-emerald-600">
+                <DollarSign size={20} />
+              </div>
+            </div>
+            <div className="text-xs text-gray-500 mt-2">
+               Pagos registrados en el periodo
+            </div>
+          </div>
+        ) : (
+          <div className="bg-white p-6 rounded-xl shadow-sm border flex flex-col justify-between">
+            <div className="flex justify-between items-start mb-2">
+              <div>
+                <p className="text-sm font-medium text-gray-500">Completados</p>
+                <h3 className="text-2xl font-bold text-green-600 mt-1">
+                  {kpis.completedOrders}
+                </h3>
+              </div>
+              <div className="p-2 bg-green-50 rounded-lg text-green-600">
+                <CheckCircle2 size={20} />
+              </div>
+            </div>
+            <div className="text-xs text-gray-500 mt-2">
+               {dateRange ? 'En el periodo seleccionado' : 'Histórico total'}
+            </div>
+          </div>
+        )}
+
+        {/* KPI 4: Deuda Global Actual (Both) */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border flex flex-col justify-between">
+          <div className="flex justify-between items-start mb-2">
+            <div>
+              <p className="text-sm font-medium text-gray-500">Deuda Global Actual</p>
+              <h3 className="text-2xl font-bold text-red-600 mt-1">
+                {formatCurrency(pendingDebtTotal)}
+              </h3>
+            </div>
+            <div className="p-2 bg-red-50 rounded-lg text-red-600">
+              <CreditCard size={20} />
+            </div>
+          </div>
+           <div className="text-xs text-gray-500 mt-2">
+            Saldo pendiente total acumulado
+          </div>
+        </div>
       </div>
 
       <div>

@@ -15,8 +15,9 @@ import {
 } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { formatDate } from '@/lib/utils';
+import { formatDate, formatCurrency } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Calendar, User, DollarSign, ExternalLink } from 'lucide-react';
 
 interface PaymentWithOrder extends Payment {
   order: Pick<Order, 'id' | 'patientName' | 'dentistName' | 'dentistId'>;
@@ -119,7 +120,75 @@ export default function PaymentsPage() {
         </CardContent>
       </Card>
 
-      <div className="border rounded-lg bg-white">
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-4">
+        {loading ? (
+          <div className="text-center py-8 text-gray-500 bg-white rounded-lg border">
+            Cargando pagos...
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-8 text-gray-500 bg-white rounded-lg border">
+            No se encontraron pagos.
+          </div>
+        ) : (
+          filtered.map((p) => (
+            <Card key={p.id} className="overflow-hidden">
+              <CardContent className="p-4 space-y-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <span className="text-xs font-mono text-gray-500">#{p.order.id}</span>
+                    <h3 className="font-semibold text-gray-900">{p.order.patientName}</h3>
+                    <p className="text-sm text-gray-500 flex items-center gap-1">
+                      <User className="h-3 w-3" /> {p.order.dentistName}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-green-600 flex items-center justify-end">
+                      <DollarSign className="h-3 w-3" /> {formatCurrency(p.amount)}
+                    </p>
+                    <p className="text-xs text-gray-500 flex items-center justify-end gap-1 mt-1">
+                      <Calendar className="h-3 w-3" /> {formatDate(p.paidAt)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t flex justify-between items-center">
+                  {p.receiptUrl ? (
+                    <a
+                      href={p.receiptUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 text-xs flex items-center gap-1 hover:underline"
+                    >
+                      <ExternalLink className="h-3 w-3" /> Ver comprobante
+                    </a>
+                  ) : (
+                    <span className="text-xs text-gray-400">Sin comprobante</span>
+                  )}
+                  
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-xs h-8"
+                    onClick={() =>
+                      router.push(
+                        `/orders/history?orderId=${encodeURIComponent(
+                          p.order.id
+                        )}`
+                      )
+                    }
+                  >
+                    Ver pedido
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden md:block border rounded-lg bg-white">
         <Table>
           <TableHeader>
             <TableRow>
@@ -135,13 +204,13 @@ export default function PaymentsPage() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-6">
+                <TableCell colSpan={7} className="text-center py-6">
                   Cargando pagos...
                 </TableCell>
               </TableRow>
             ) : filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-6">
+                <TableCell colSpan={7} className="text-center py-6">
                   No se encontraron pagos.
                 </TableCell>
               </TableRow>
@@ -155,7 +224,7 @@ export default function PaymentsPage() {
                   <TableCell>{p.order.patientName}</TableCell>
                   <TableCell>{p.order.dentistName}</TableCell>
                   <TableCell>
-                    $ {Number(p.amount).toFixed(2)}
+                    {formatCurrency(p.amount)}
                   </TableCell>
                   <TableCell>
                     {p.receiptUrl ? (

@@ -7,14 +7,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Card, CardContent } from '@/components/ui/card';
 import { StatusBadge } from './StatusBadge';
-import { formatDate } from '@/lib/utils';
+import { formatDate, formatCurrency } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrders } from '@/contexts/OrderContext';
 import { useRef, useState } from 'react';
-import { Loader2, Paperclip } from 'lucide-react';
+import { Loader2, Paperclip, ChevronRight, User, Calendar, DollarSign } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 
@@ -61,7 +62,99 @@ export const OrderTable = ({ orders }: OrderTableProps) => {
 
   return (
     <>
-      <div className="rounded-md border bg-white">
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-4">
+        {orders.length === 0 ? (
+          <div className="text-center py-8 text-gray-500 bg-white rounded-lg border">
+            No se encontraron pedidos.
+          </div>
+        ) : (
+          orders.map((order) => {
+            const paid = getPaidAmount(order);
+            const total = order.totalPrice ? Number(order.totalPrice) : null;
+            const remaining = total !== null ? Number((total - paid).toFixed(2)) : null;
+            
+            return (
+              <Card key={order.id} className="overflow-hidden">
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="text-xs font-mono text-gray-500">#{order.id}</span>
+                      <h3 className="font-semibold text-gray-900">{order.patientName}</h3>
+                      <p className="text-sm text-gray-500 flex items-center gap-1">
+                        <User className="h-3 w-3" /> {order.dentistName}
+                      </p>
+                    </div>
+                    <StatusBadge status={order.status} />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div className="bg-gray-50 p-2 rounded">
+                      <p className="text-xs text-gray-500">Tipo</p>
+                      <p className="font-medium capitalize">{order.prosthesisType}</p>
+                    </div>
+                    <div className="bg-gray-50 p-2 rounded">
+                      <p className="text-xs text-gray-500">Entrega</p>
+                      <p className="font-medium flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        {formatDate(order.deliveryDate)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center pt-2 border-t">
+                    <div className="flex items-center gap-2">
+                       {total === null ? (
+                        <span className="text-gray-400 text-xs">Sin asignar</span>
+                      ) : remaining !== null && remaining <= 0 ? (
+                        <span className="text-green-600 text-xs font-semibold flex items-center">
+                          <DollarSign className="h-3 w-3" /> {formatCurrency(0)}
+                        </span>
+                      ) : (
+                        <span className="text-red-600 text-xs font-semibold flex items-center">
+                          <DollarSign className="h-3 w-3" /> {formatCurrency(remaining || 0)}
+                        </span>
+                      )}
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => openDetails(order)} className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 p-0 h-auto">
+                      Ver detalles <ChevronRight className="h-4 w-4 ml-1" />
+                    </Button>
+                  </div>
+
+                  {user?.role === 'admin' && (
+                    <div className="pt-2 border-t mt-2">
+                       <Select
+                          defaultValue={order.status}
+                          onValueChange={(val) =>
+                            handleStatusChange(order.id, val as OrderStatus)
+                          }
+                          disabled={updatingId === order.id}
+                        >
+                          <SelectTrigger className="w-full h-9">
+                            {updatingId === order.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin mx-auto" />
+                            ) : (
+                              <SelectValue />
+                            )}
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pendiente">Pendiente</SelectItem>
+                            <SelectItem value="en_proceso">En Proceso</SelectItem>
+                            <SelectItem value="completado">Completado</SelectItem>
+                            <SelectItem value="entregado">Entregado</SelectItem>
+                          </SelectContent>
+                        </Select>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })
+        )}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden md:block rounded-md border bg-white">
         <Table>
           <TableHeader>
             <TableRow>
@@ -114,11 +207,11 @@ export const OrderTable = ({ orders }: OrderTableProps) => {
                         <span className="text-gray-400 text-xs">Sin asignar</span>
                       ) : remaining !== null && remaining <= 0 ? (
                         <span className="text-green-600 text-xs font-semibold">
-                          $ 0.00
+                          {formatCurrency(0)}
                         </span>
                       ) : (
                         <span className="text-red-600 text-xs font-semibold">
-                          $ {remaining?.toFixed(2)}
+                          {formatCurrency(remaining || 0)}
                         </span>
                       )}
                     </TableCell>
@@ -258,7 +351,7 @@ export const OrderTable = ({ orders }: OrderTableProps) => {
                   <p className="text-gray-500">Costo total del trabajo</p>
                   <p className="font-medium">
                     {selected.totalPrice
-                      ? `$ ${Number(selected.totalPrice).toFixed(2)}`
+                      ? formatCurrency(selected.totalPrice)
                       : 'Sin asignar'}
                   </p>
                 </div>
@@ -266,7 +359,7 @@ export const OrderTable = ({ orders }: OrderTableProps) => {
                   <p className="text-gray-500">Saldo pendiente</p>
                   <p className="font-medium">
                     {selected.totalPrice
-                      ? `$ ${(Number(selected.totalPrice) - getPaidAmount(selected)).toFixed(2)}`
+                      ? formatCurrency(Number(selected.totalPrice) - getPaidAmount(selected))
                       : '—'}
                   </p>
                 </div>
@@ -351,7 +444,7 @@ export const OrderTable = ({ orders }: OrderTableProps) => {
                                   {p.paidAt ? formatDate(p.paidAt) : '—'}
                                 </td>
                                 <td className="px-2 py-1">
-                                  $ {Number(p.amount).toFixed(2)}
+                                  {formatCurrency(p.amount)}
                                 </td>
                                 <td className="px-2 py-1">
                                   {p.receiptUrl ? (

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -28,7 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Trash2, UserCog } from 'lucide-react';
+import { Plus, Trash2, UserCog, User as UserIcon, Calendar, Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 
@@ -158,7 +159,8 @@ export default function UsersPage() {
           <DialogTrigger asChild>
             <Button className="gap-2">
               <Plus className="h-4 w-4" />
-              Nuevo Usuario
+              <span className="hidden sm:inline">Nuevo Usuario</span>
+              <span className="sm:hidden">Nuevo</span>
             </Button>
           </DialogTrigger>
           <DialogContent>
@@ -217,7 +219,53 @@ export default function UsersPage() {
         </Dialog>
       </div>
 
-      <div className="border rounded-lg">
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-4">
+        {users.map((user) => (
+          <Card key={user.id} className="overflow-hidden">
+             <CardContent className="p-4 space-y-3">
+               <div className="flex justify-between items-start">
+                 <div>
+                    <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                       {user.name}
+                    </h3>
+                    <p className="text-sm text-gray-500 flex items-center gap-1">
+                      <UserIcon className="h-3 w-3" /> @{user.username}
+                    </p>
+                 </div>
+                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    user.role === 'admin' 
+                      ? 'bg-purple-100 text-purple-800' 
+                      : 'bg-blue-100 text-blue-800'
+                  }`}>
+                    <Shield className="h-3 w-3 mr-1" />
+                    {user.role === 'admin' ? 'Admin' : 'Dentista'}
+                  </span>
+               </div>
+               
+               <div className="flex justify-between items-center pt-2 border-t">
+                  <div className="text-xs text-gray-500 flex items-center gap-1">
+                    <Calendar className="h-3 w-3" />
+                    {new Date(user.createdAt).toLocaleDateString()}
+                  </div>
+                  {user.id !== currentUser?.id && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDelete(user.id)}
+                      className="text-red-500 hover:text-red-700 hover:bg-red-50 h-8 px-2"
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" /> Eliminar
+                    </Button>
+                  )}
+               </div>
+             </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden md:block border rounded-lg">
         <Table>
           <TableHeader>
             <TableRow>

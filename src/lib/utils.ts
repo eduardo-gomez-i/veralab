@@ -14,3 +14,11 @@ export function formatDate(dateString: string) {
     return dateString
   }
 }
+
+export function formatCurrency(amount: number | string) {
+  const value = typeof amount === 'string' ? parseFloat(amount) : amount;
+  return new Intl.NumberFormat('es-MX', {
+    style: 'currency',
+    currency: 'MXN',
+  }).format(value);
+}

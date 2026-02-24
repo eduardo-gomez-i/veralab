@@ -3,7 +3,7 @@
 import { Order } from '@/types';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { StatusBadge } from './StatusBadge';
-import { formatDate } from '@/lib/utils';
+import { formatDate, formatCurrency } from '@/lib/utils';
 import { Calendar, User, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
@@ -53,11 +53,11 @@ export const OrderCard = ({ order }: OrderCardProps) => {
             <span className="text-xs text-gray-400">Sin asignar</span>
           ) : remaining !== null && remaining <= 0 ? (
             <span className="text-xs font-semibold text-green-600">
-              $ 0.00
+              {formatCurrency(0)}
             </span>
           ) : (
             <span className="text-xs font-semibold text-red-600">
-              $ {remaining?.toFixed(2)}
+              {formatCurrency(remaining || 0)}
             </span>
           )}
         </div>

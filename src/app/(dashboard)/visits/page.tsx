@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { Visit, User } from '@/types';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -22,7 +23,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { formatDate } from '@/lib/utils';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Calendar, User as UserIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export default function VisitsPage() {
@@ -195,7 +196,8 @@ export default function VisitsPage() {
             }}
           >
             <Plus className="h-4 w-4" />
-            Nueva visita
+            <span className="hidden sm:inline">Nueva visita</span>
+            <span className="sm:hidden">Nueva</span>
           </Button>
           <DialogContent>
             <DialogHeader>
@@ -300,7 +302,56 @@ export default function VisitsPage() {
         </Dialog>
       </div>
 
-      <div className="border rounded-lg">
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-4">
+        {visits.length === 0 ? (
+          <div className="text-center py-8 text-gray-500 bg-white rounded-lg border">
+            No hay visitas programadas.
+          </div>
+        ) : (
+          visits.map((visit) => (
+            <Card key={visit.id} className="overflow-hidden">
+               <CardContent className="p-4 space-y-3">
+                 <div className="flex justify-between items-start">
+                   <div>
+                      <h3 className="font-semibold text-gray-900">
+                         {visit.title}
+                      </h3>
+                      <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
+                        <Calendar className="h-3 w-3" /> {formatDate(visit.date)}
+                      </p>
+                   </div>
+                   <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                      onClick={() => handleDelete(visit.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                 </div>
+                 
+                 <div className="bg-gray-50 p-2 rounded text-sm">
+                    <p className="text-xs text-gray-500 mb-1 flex items-center gap-1">
+                      <UserIcon className="h-3 w-3" /> Dentistas
+                    </p>
+                    <p>{visit.dentists.map((d) => d.name).join(', ') || '—'}</p>
+                 </div>
+
+                 {visit.notes && (
+                   <div className="text-sm text-gray-600 border-t pt-2">
+                      <p className="text-xs text-gray-500 mb-1">Notas:</p>
+                      {visit.notes}
+                   </div>
+                 )}
+               </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden md:block border rounded-lg">
         <Table>
           <TableHeader>
             <TableRow>

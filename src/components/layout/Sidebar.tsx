@@ -7,23 +7,36 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 
-export const Sidebar = () => {
+interface SidebarProps {
+  onClose?: () => void;
+}
+
+export const Sidebar = ({ onClose }: SidebarProps) => {
   const { user, logout } = useAuth();
   const pathname = usePathname();
 
   if (!user) return null;
 
+  const handleLinkClick = () => {
+    if (onClose) {
+      onClose();
+    }
+  };
+
   return (
     <div className="h-screen w-64 bg-white border-r flex flex-col">
-      <div className="p-6 border-b">
-        <h2 className="text-xl font-bold text-blue-600">DentalPro</h2>
-        <p className="text-xs text-gray-500 mt-1">Sistema de Pedidos</p>
+      <div className="p-6 border-b flex justify-between items-center">
+        <div>
+          <h2 className="text-xl font-bold text-blue-600">DentalPro</h2>
+          <p className="text-xs text-gray-500 mt-1">Sistema de Pedidos</p>
+        </div>
       </div>
       
       <div className="p-4 flex-1">
         <nav className="space-y-2">
           <Link
             href="/dashboard"
+            onClick={handleLinkClick}
             className={cn(
               "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
               pathname === "/dashboard"
@@ -38,6 +51,7 @@ export const Sidebar = () => {
           {user.role === 'dentista' && (
             <Link
               href="/orders/new"
+              onClick={handleLinkClick}
               className={cn(
                 "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
                 pathname === "/orders/new"
@@ -52,6 +66,7 @@ export const Sidebar = () => {
           
           <Link
             href="/orders/history"
+            onClick={handleLinkClick}
             className={cn(
               "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
               pathname === "/orders/history"
@@ -65,6 +80,7 @@ export const Sidebar = () => {
 
           <Link
             href="/payments"
+            onClick={handleLinkClick}
             className={cn(
               "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
               pathname === "/payments"
@@ -80,6 +96,7 @@ export const Sidebar = () => {
             <>
               <Link
                 href="/users"
+                onClick={handleLinkClick}
                 className={cn(
                   "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
                   pathname === "/users"
@@ -92,6 +109,7 @@ export const Sidebar = () => {
               </Link>
               <Link
                 href="/visits"
+                onClick={handleLinkClick}
                 className={cn(
                   "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
                   pathname === "/visits"
