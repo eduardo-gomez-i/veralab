@@ -7,6 +7,10 @@ dotenv.config();
 const prisma = new PrismaClient();
 
 async function main() {
+  if (!process.env.DATABASE_URL) {
+    throw new Error('DATABASE_URL no está configurado. Define DATABASE_URL antes de ejecutar el seed.')
+  }
+
   const dentistaPassword = await bcrypt.hash('demo123', 10);
   const adminPassword = await bcrypt.hash('admin123', 10);
 
@@ -40,6 +44,9 @@ main()
     await prisma.$disconnect();
   })
   .catch(async (e) => {
+    if (e && typeof e === 'object' && 'code' in e && (e as any).code === 'P2021') {
+      console.error('No existen las tablas en la base de datos. Ejecuta primero: prisma migrate deploy');
+    }
     console.error(e);
     await prisma.$disconnect();
     process.exit(1);
