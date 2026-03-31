@@ -31,6 +31,37 @@ export default tseslint.config({
 })
 ```
 
+## Prisma (Producción)
+
+1. Configura `DATABASE_URL` en el entorno del servidor (archivo `.env` local al servidor o variables de entorno). No subas `.env` a Git.
+2. Instala dependencias:
+
+```bash
+npm ci
+```
+
+3. Genera el cliente de Prisma:
+
+```bash
+npm run prisma:generate
+```
+
+4. Aplica migraciones en producción:
+
+```bash
+npm run prisma:migrate:deploy
+```
+
+5. (Opcional / recomendado solo en el primer deploy) Ejecuta el seeder:
+
+```bash
+npm run prisma:seed
+```
+
+Notas:
+- En producción usa `prisma migrate deploy` (no `migrate dev`).
+- El seeder actual es idempotente (usa `upsert`), así que puede ejecutarse más de una vez sin duplicar usuarios.
+
 You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
 
 ```js

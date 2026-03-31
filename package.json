@@ -8,7 +8,13 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "check": "tsc -b --noEmit"
+    "check": "tsc -b --noEmit",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate:deploy": "prisma migrate deploy",
+    "prisma:seed": "prisma db seed"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
