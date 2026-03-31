@@ -2,6 +2,7 @@ import { Sidebar } from './Sidebar';
 import { ReactNode, useState } from 'react';
 import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import Image from 'next/image';
 
 interface DashboardLayoutProps {
   children?: ReactNode;
@@ -12,7 +13,6 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
-      {/* Mobile Sidebar Overlay */}
       {isSidebarOpen && (
         <div 
           className="fixed inset-0 z-50 bg-black/50 md:hidden"
@@ -38,12 +38,13 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       </div>
 
       <main className="flex-1 flex flex-col overflow-hidden">
-        {/* Mobile Header */}
         <header className="md:hidden flex items-center p-4 bg-white border-b sticky top-0 z-40">
           <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(true)}>
             <Menu className="h-6 w-6" />
           </Button>
-          <span className="ml-4 font-bold text-lg text-blue-600">DentalPro</span>
+          <div className="ml-4">
+            <Image src="/logo.png" alt="VeraLAB" width={180} height={48} className="h-10 w-auto" priority />
+          </div>
         </header>
 
         <div className="flex-1 overflow-auto p-4 md:p-6">

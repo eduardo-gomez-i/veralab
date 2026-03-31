@@ -1,6 +1,7 @@
 "use client";
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { 
   CheckCircle2, 
@@ -125,12 +126,9 @@ export default function LandingPage() {
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center">
-              <span className="text-white font-bold text-lg">V</span>
-            </div>
-            <span className="text-xl font-bold text-blue-900">Veralab</span>
-          </div>
+          <Link href="/" className="flex items-center">
+            <Image src="/logo.png" alt="VeraLAB" width={240} height={64} className="h-12 w-auto" priority />
+          </Link>
           
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-gray-600">
             <Link href="#servicios" className="hover:text-blue-600 transition-colors">Servicios</Link>

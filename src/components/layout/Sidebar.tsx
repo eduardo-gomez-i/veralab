@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { LayoutDashboard, PlusCircle, History, LogOut, Users, CalendarDays } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 
@@ -27,7 +28,7 @@ export const Sidebar = ({ onClose }: SidebarProps) => {
     <div className="h-screen w-64 bg-white border-r flex flex-col">
       <div className="p-6 border-b flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-bold text-blue-600">DentalPro</h2>
+          <Image src="/logo.png" alt="VeraLAB" width={220} height={64} className="h-12 w-auto" priority />
           <p className="text-xs text-gray-500 mt-1">Sistema de Pedidos</p>
         </div>
       </div>

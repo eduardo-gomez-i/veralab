@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { sendMailgunMessage } from '@/lib/mailgun';
 
 export async function GET() {
   try {
@@ -102,6 +103,32 @@ export async function POST(request: Request) {
         }
       },
     });
+
+    try {
+      const notifyTo =
+        process.env.MAILGUN_NOTIFY_TO || 'gomez.i.eduardomanuel@gmail.com';
+      const subject = `Nuevo pedido #${order.id} - ${order.patientName}`;
+      const text = [
+        `Se creó un nuevo pedido.`,
+        ``,
+        `ID: ${order.id}`,
+        `Paciente: ${order.patientName}`,
+        `Dentista: ${order.dentistName}`,
+        `Tipo: ${order.prosthesisType}`,
+        `Material: ${order.material}`,
+        `Fecha de entrega: ${order.deliveryDate.toISOString()}`,
+        `Prioridad: ${order.priority}`,
+        order.attachmentUrl ? `Adjunto: ${order.attachmentUrl}` : `Adjunto: —`,
+      ].join('\n');
+
+      await sendMailgunMessage({
+        to: notifyTo,
+        subject,
+        text,
+      });
+    } catch (err) {
+      console.error('Mailgun notification failed', err);
+    }
     
     return NextResponse.json(order);
   } catch (error) {

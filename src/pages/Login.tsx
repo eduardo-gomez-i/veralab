@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertCircle, Loader2 } from 'lucide-react';
+import Image from 'next/image';
 
 const Login = () => {
   const [username, setUsername] = useState('');
@@ -33,7 +34,7 @@ const Login = () => {
       } else {
         setError('Credenciales inválidas. Intente nuevamente.');
       }
-    } catch (err) {
+    } catch {
       setError('Ocurrió un error al iniciar sesión.');
     }
   };
@@ -42,6 +43,9 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="space-y-1">
+          <div className="flex justify-center">
+            <Image src="/logo.png" alt="VeraLAB" width={280} height={80} className="h-16 w-auto" priority />
+          </div>
           <CardTitle className="text-2xl font-bold text-center text-blue-600">Sistema de Pedidos</CardTitle>
           <CardDescription className="text-center">
             Ingrese sus credenciales para acceder
