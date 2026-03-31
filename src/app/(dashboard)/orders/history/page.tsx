@@ -1,4 +1,3 @@
 "use client";
 
-export { default } from '@/pages/History';
-
+export { default } from '@/screens/History';

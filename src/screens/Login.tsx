@@ -26,7 +26,7 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    
+
     try {
       const success = await login(username, password);
       if (success) {
@@ -47,9 +47,7 @@ const Login = () => {
             <Image src="/logo.png" alt="VeraLAB" width={280} height={80} className="h-16 w-auto" priority />
           </div>
           <CardTitle className="text-2xl font-bold text-center text-blue-600">Sistema de Pedidos</CardTitle>
-          <CardDescription className="text-center">
-            Ingrese sus credenciales para acceder
-          </CardDescription>
+          <CardDescription className="text-center">Ingrese sus credenciales para acceder</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -116,3 +114,4 @@ const Login = () => {
 };
 
 export default Login;
+

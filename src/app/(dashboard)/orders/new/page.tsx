@@ -1,4 +1,3 @@
 "use client";
 
-export { default } from '@/pages/NewOrder';
-
+export { default } from '@/screens/NewOrder';

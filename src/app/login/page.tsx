@@ -1,4 +1,4 @@
-import Login from '@/pages/Login';
+import Login from '@/screens/Login';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {

@@ -31,13 +31,13 @@ const NewOrder = () => {
   });
 
   const handleChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
+
     try {
       await addOrder(
         {
@@ -47,22 +47,22 @@ const NewOrder = () => {
         },
         attachment
       );
-      
+
       toast({
-        title: "Pedido creado",
-        description: "El pedido ha sido registrado exitosamente.",
+        title: 'Pedido creado',
+        description: 'El pedido ha sido registrado exitosamente.',
       });
-      
+
       router.push('/dashboard');
     } catch (error) {
       const description =
         error instanceof Error && error.message
           ? error.message
-          : "No se pudo crear el pedido. Intente nuevamente.";
+          : 'No se pudo crear el pedido. Intente nuevamente.';
       toast({
-        title: "Error",
+        title: 'Error',
         description,
-        variant: "destructive",
+        variant: 'destructive',
       });
     } finally {
       setIsSubmitting(false);
@@ -75,14 +75,13 @@ const NewOrder = () => {
         <ArrowLeft className="mr-2 h-4 w-4" />
         Volver
       </Button>
-      
+
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl text-blue-600">Nuevo Pedido de Prótesis</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
-            
             <div className="space-y-4">
               <h3 className="font-semibold text-lg border-b pb-2">Datos del Paciente</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -119,10 +118,7 @@ const NewOrder = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="prosthesisType">Tipo de Prótesis</Label>
-                  <Select 
-                    value={formData.prosthesisType} 
-                    onValueChange={(value) => handleChange('prosthesisType', value)}
-                  >
+                  <Select value={formData.prosthesisType} onValueChange={(value) => handleChange('prosthesisType', value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccione tipo" />
                     </SelectTrigger>
@@ -138,10 +134,7 @@ const NewOrder = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="material">Material</Label>
-                  <Select 
-                    value={formData.material} 
-                    onValueChange={(value) => handleChange('material', value)}
-                  >
+                  <Select value={formData.material} onValueChange={(value) => handleChange('material', value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccione material" />
                     </SelectTrigger>
@@ -156,10 +149,7 @@ const NewOrder = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="priority">Prioridad</Label>
-                  <Select 
-                    value={formData.priority} 
-                    onValueChange={(value) => handleChange('priority', value)}
-                  >
+                  <Select value={formData.priority} onValueChange={(value) => handleChange('priority', value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccione prioridad" />
                     </SelectTrigger>
@@ -193,7 +183,7 @@ const NewOrder = () => {
                   placeholder="Cualquier otra información relevante..."
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="attachment">Adjuntar archivo (opcional)</Label>
                 <Input
@@ -232,3 +222,4 @@ const NewOrder = () => {
 };
 
 export default NewOrder;
+

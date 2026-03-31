@@ -34,7 +34,7 @@ const History = () => {
     const filters: any = {};
     if (searchTerm) filters.searchTerm = searchTerm;
     if (statusFilter && statusFilter !== 'all') filters.status = statusFilter as OrderStatus;
-    
+
     setFilters(filters);
   }, [searchTerm, statusFilter, setFilters]);
 
@@ -83,3 +83,4 @@ const History = () => {
 };
 
 export default History;
+
