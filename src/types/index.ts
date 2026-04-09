@@ -7,10 +7,10 @@ export interface User {
   name: string;
 }
 
-export type ProsthesisType = 'corona' | 'puente' | 'dentadura' | 'ortodoncia';
-export type Material = 'ceramica' | 'metal' | 'resina' | 'zirconia';
+export type ProsthesisType = string;
+export type Material = string;
 export type OrderStatus = 'pendiente' | 'en_proceso' | 'completado' | 'entregado';
-export type Priority = 'normal' | 'urgente';
+export type Priority = string;
 
 export interface Payment {
   id: string;
@@ -35,7 +35,9 @@ export interface Order {
   id: string;
   patientName: string;
   prosthesisType: ProsthesisType;
+  serviceName?: string;
   material: Material;
+  dentalPieces?: string;
   specifications: string;
   deliveryDate: string; // ISO Date string
   status: OrderStatus;

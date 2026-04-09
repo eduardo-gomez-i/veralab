@@ -89,7 +89,9 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const form = new FormData();
       form.append('patientName', orderData.patientName);
       form.append('prosthesisType', orderData.prosthesisType as string);
+      if (orderData.serviceName) form.append('serviceName', orderData.serviceName);
       form.append('material', orderData.material as string);
+      if (orderData.dentalPieces) form.append('dentalPieces', orderData.dentalPieces);
       form.append('specifications', orderData.specifications || '');
       form.append('deliveryDate', orderData.deliveryDate);
       form.append('status', orderData.status);

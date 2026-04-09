@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrders } from '@/contexts/OrderContext';
 import { useRef, useState } from 'react';
-import { Loader2, Paperclip, ChevronRight, User, Calendar, DollarSign } from 'lucide-react';
+import { Loader2, Paperclip, ChevronRight, User, Calendar, DollarSign, Printer } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 
@@ -60,6 +60,169 @@ export const OrderTable = ({ orders }: OrderTableProps) => {
     setUpdatingId(null);
   };
 
+  const escapeHtml = (value: string) =>
+    value
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#39;');
+
+  const handlePrintOrder = (order: Order) => {
+    if (typeof window === 'undefined') return;
+
+    const paidAmount = getPaidAmount(order);
+    const totalPrice = order.totalPrice ? Number(order.totalPrice) : null;
+    const balance = totalPrice !== null ? Math.max(0, totalPrice - paidAmount) : null;
+
+    const printableFields = [
+      ['Pedido', order.id],
+      ['Paciente', order.patientName],
+      ['Dentista', order.dentistName],
+      ['Estado', order.status.replaceAll('_', ' ')],
+      ['Área', order.prosthesisType],
+      ['Servicio', order.serviceName || 'Sin especificar'],
+      ['Material', order.material || 'Sin especificar'],
+      ['Piezas', order.dentalPieces || 'Sin especificar'],
+      ['Entrega solicitada', formatDate(order.deliveryDate)],
+      ['Entrega estimada', order.estimatedDeliveryDate ? formatDate(order.estimatedDeliveryDate) : 'Sin estimar'],
+      ['Costo total', totalPrice !== null ? formatCurrency(totalPrice) : 'Sin asignar'],
+      ['Abonado', formatCurrency(paidAmount)],
+      ['Saldo', balance !== null ? formatCurrency(balance) : 'Sin asignar'],
+      ['Prioridad', order.priority],
+    ];
+
+    const detailsHtml = printableFields
+      .map(
+        ([label, value]) => `
+          <div class="row">
+            <span class="label">${escapeHtml(label)}</span>
+            <span class="value">${escapeHtml(value)}</span>
+          </div>
+        `
+      )
+      .join('');
+
+    const specs = order.specifications?.trim() || 'Sin especificaciones';
+    const notes = order.notes?.trim() || 'Sin notas';
+    const issuedAt = new Date().toLocaleString('es-MX');
+
+    const printWindow = window.open('', '_blank', 'width=420,height=720');
+
+    if (!printWindow) {
+      toast({
+        variant: 'destructive',
+        title: 'No se pudo abrir la impresión',
+        description: 'Verifica que tu navegador no esté bloqueando ventanas emergentes.',
+      });
+      return;
+    }
+
+    printWindow.document.write(`
+      <!doctype html>
+      <html lang="es">
+        <head>
+          <meta charset="utf-8" />
+          <title>Nota de pedido ${escapeHtml(order.id)}</title>
+          <style>
+            * { box-sizing: border-box; }
+            body {
+              margin: 0;
+              padding: 0;
+              font-family: Arial, Helvetica, sans-serif;
+              color: #000;
+              background: #fff;
+            }
+            .ticket {
+              width: 80mm;
+              max-width: 80mm;
+              padding: 8px 10px 14px;
+              margin: 0 auto;
+            }
+            .center { text-align: center; }
+            .title {
+              font-size: 16px;
+              font-weight: 700;
+              margin-bottom: 2px;
+            }
+            .subtitle {
+              font-size: 11px;
+              margin-bottom: 8px;
+            }
+            .divider {
+              border-top: 1px dashed #000;
+              margin: 8px 0;
+            }
+            .row {
+              display: flex;
+              justify-content: space-between;
+              gap: 12px;
+              font-size: 11px;
+              margin-bottom: 4px;
+              align-items: flex-start;
+            }
+            .label {
+              font-weight: 700;
+              min-width: 74px;
+            }
+            .value {
+              text-align: right;
+              white-space: pre-wrap;
+              word-break: break-word;
+              flex: 1;
+            }
+            .block-title {
+              font-size: 11px;
+              font-weight: 700;
+              margin-bottom: 4px;
+              text-transform: uppercase;
+            }
+            .block-text {
+              font-size: 11px;
+              white-space: pre-wrap;
+              word-break: break-word;
+              line-height: 1.35;
+            }
+            .footer {
+              text-align: center;
+              font-size: 10px;
+              margin-top: 10px;
+            }
+            @page {
+              size: 80mm auto;
+              margin: 4mm;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="ticket">
+            <div class="center">
+              <div class="title">VeraLAB</div>
+              <div class="subtitle">Nota de pedido</div>
+            </div>
+            <div class="divider"></div>
+            ${detailsHtml}
+            <div class="divider"></div>
+            <div class="block-title">Especificaciones</div>
+            <div class="block-text">${escapeHtml(specs)}</div>
+            <div class="divider"></div>
+            <div class="block-title">Notas</div>
+            <div class="block-text">${escapeHtml(notes)}</div>
+            <div class="divider"></div>
+            <div class="footer">Impreso: ${escapeHtml(issuedAt)}</div>
+          </div>
+          <script>
+            window.onload = () => {
+              window.print();
+              window.onafterprint = () => window.close();
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
   return (
     <>
       {/* Mobile Card View */}
@@ -90,7 +253,7 @@ export const OrderTable = ({ orders }: OrderTableProps) => {
                   
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div className="bg-gray-50 p-2 rounded">
-                      <p className="text-xs text-gray-500">Tipo</p>
+                      <p className="text-xs text-gray-500">Área</p>
                       <p className="font-medium capitalize">{order.prosthesisType}</p>
                     </div>
                     <div className="bg-gray-50 p-2 rounded">
@@ -100,6 +263,16 @@ export const OrderTable = ({ orders }: OrderTableProps) => {
                         {formatDate(order.deliveryDate)}
                       </p>
                     </div>
+                  </div>
+                  <div className="bg-gray-50 p-2 rounded text-sm">
+                    <p className="text-xs text-gray-500">Servicio</p>
+                    <p className="font-medium">{order.serviceName || 'Sin especificar'}</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Material: {order.material || 'Sin especificar'}
+                    </p>
+                    {order.dentalPieces && (
+                      <p className="text-xs text-gray-500">Piezas: {order.dentalPieces}</p>
+                    )}
                   </div>
 
                   <div className="flex justify-between items-center pt-2 border-t">
@@ -123,7 +296,8 @@ export const OrderTable = ({ orders }: OrderTableProps) => {
 
                   {user?.role === 'admin' && (
                     <div className="pt-2 border-t mt-2">
-                       <Select
+                      <div className="space-y-2">
+                        <Select
                           defaultValue={order.status}
                           onValueChange={(val) =>
                             handleStatusChange(order.id, val as OrderStatus)
@@ -144,6 +318,16 @@ export const OrderTable = ({ orders }: OrderTableProps) => {
                             <SelectItem value="entregado">Entregado</SelectItem>
                           </SelectContent>
                         </Select>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full"
+                          onClick={() => handlePrintOrder(order)}
+                        >
+                          <Printer className="h-4 w-4 mr-2" />
+                          Imprimir nota
+                        </Button>
+                      </div>
                     </div>
                   )}
                 </CardContent>
@@ -160,8 +344,10 @@ export const OrderTable = ({ orders }: OrderTableProps) => {
             <TableRow>
               <TableHead className="w-[100px]">ID</TableHead>
               <TableHead>Paciente</TableHead>
-              <TableHead>Tipo</TableHead>
+              <TableHead>Área</TableHead>
+              <TableHead>Servicio</TableHead>
               <TableHead>Material</TableHead>
+              <TableHead>Piezas</TableHead>
               <TableHead>Fecha Entrega</TableHead>
               <TableHead>Entrega Estimada</TableHead>
               <TableHead>Dentista</TableHead>
@@ -176,7 +362,7 @@ export const OrderTable = ({ orders }: OrderTableProps) => {
           <TableBody>
             {orders.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={11} className="h-24 text-center">
+                <TableCell colSpan={13} className="h-24 text-center">
                   No se encontraron pedidos.
                 </TableCell>
               </TableRow>
@@ -191,7 +377,9 @@ export const OrderTable = ({ orders }: OrderTableProps) => {
                     <TableCell className="font-medium">{order.id}</TableCell>
                     <TableCell>{order.patientName}</TableCell>
                     <TableCell className="capitalize">{order.prosthesisType}</TableCell>
-                    <TableCell className="capitalize">{order.material}</TableCell>
+                    <TableCell>{order.serviceName || 'Sin especificar'}</TableCell>
+                    <TableCell className="capitalize">{order.material || 'Sin especificar'}</TableCell>
+                    <TableCell>{order.dentalPieces || '—'}</TableCell>
                     <TableCell>{formatDate(order.deliveryDate)}</TableCell>
                     <TableCell>
                       {order.estimatedDeliveryDate
@@ -284,6 +472,13 @@ export const OrderTable = ({ orders }: OrderTableProps) => {
                               }}
                             />
                             <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handlePrintOrder(order)}
+                            >
+                              <Printer className="h-4 w-4" />
+                            </Button>
+                            <Button
                               variant="ghost"
                               size="icon"
                               onClick={() =>
@@ -312,6 +507,14 @@ export const OrderTable = ({ orders }: OrderTableProps) => {
               <DialogDescription>Detalles del pedido y adjunto</DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
+              {user?.role === 'admin' && (
+                <div className="flex justify-end">
+                  <Button variant="outline" onClick={() => handlePrintOrder(selected)}>
+                    <Printer className="h-4 w-4 mr-2" />
+                    Imprimir nota térmica
+                  </Button>
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <p className="text-gray-500">Paciente</p>
@@ -322,12 +525,20 @@ export const OrderTable = ({ orders }: OrderTableProps) => {
                   <p className="font-medium">{selected.dentistName}</p>
                 </div>
                 <div>
-                  <p className="text-gray-500">Tipo</p>
+                  <p className="text-gray-500">Área</p>
                   <p className="font-medium capitalize">{selected.prosthesisType}</p>
                 </div>
                 <div>
+                  <p className="text-gray-500">Servicio</p>
+                  <p className="font-medium">{selected.serviceName || 'Sin especificar'}</p>
+                </div>
+                <div>
                   <p className="text-gray-500">Material</p>
-                  <p className="font-medium capitalize">{selected.material}</p>
+                  <p className="font-medium capitalize">{selected.material || 'Sin especificar'}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Piezas dentales</p>
+                  <p className="font-medium">{selected.dentalPieces || 'Sin especificar'}</p>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4 text-sm">

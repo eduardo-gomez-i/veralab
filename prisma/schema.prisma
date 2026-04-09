@@ -23,7 +23,9 @@ model Order {
   id             String   @id @default(uuid())
   patientName    String
   prosthesisType String
+  serviceName    String?
   material       String
+  dentalPieces   String?
   specifications String   @db.Text
   deliveryDate   DateTime
   status         String

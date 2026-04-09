@@ -35,7 +35,12 @@ export const OrderCard = ({ order }: OrderCardProps) => {
       <CardContent className="p-4 pt-2 space-y-2 text-sm">
         <div className="flex items-center text-gray-600">
           <FileText size={16} className="mr-2 text-blue-500" />
-          <span className="capitalize">{order.prosthesisType} - {order.material}</span>
+          <div>
+            <p className="capitalize">{order.prosthesisType}</p>
+            <p className="text-xs text-gray-500">
+              {order.serviceName || order.material || 'Sin detalle de servicio'}
+            </p>
+          </div>
         </div>
         <div className="flex items-center text-gray-600">
           <Calendar size={16} className="mr-2 text-blue-500" />
@@ -45,6 +50,14 @@ export const OrderCard = ({ order }: OrderCardProps) => {
           <User size={16} className="mr-2 text-blue-500" />
           <span>Dr: {order.dentistName}</span>
         </div>
+        {order.dentalPieces && (
+          <div className="text-gray-600">
+            <span className="mr-2 text-xs uppercase tracking-wide text-gray-500">
+              Piezas
+            </span>
+            <span>{order.dentalPieces}</span>
+          </div>
+        )}
         <div className="flex items-center text-gray-600">
           <span className="mr-2 text-xs uppercase tracking-wide text-gray-500">
             Saldo

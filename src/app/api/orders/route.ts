@@ -36,7 +36,9 @@ export async function POST(request: Request) {
       // Campos de texto
       payload.patientName = String(form.get('patientName') || '');
       payload.prosthesisType = String(form.get('prosthesisType') || '');
+      payload.serviceName = String(form.get('serviceName') || '');
       payload.material = String(form.get('material') || '');
+      payload.dentalPieces = String(form.get('dentalPieces') || '');
       payload.specifications = String(form.get('specifications') || '');
       payload.deliveryDate = String(form.get('deliveryDate') || '');
       payload.status = String(form.get('status') || 'pendiente');
@@ -86,7 +88,9 @@ export async function POST(request: Request) {
       data: {
         patientName: payload.patientName,
         prosthesisType: payload.prosthesisType,
+        serviceName: payload.serviceName || undefined,
         material: payload.material,
+        dentalPieces: payload.dentalPieces || undefined,
         specifications: payload.specifications || '',
         deliveryDate: new Date(payload.deliveryDate),
         status: payload.status || 'pendiente',
@@ -114,8 +118,10 @@ export async function POST(request: Request) {
         `ID: ${order.id}`,
         `Paciente: ${order.patientName}`,
         `Dentista: ${order.dentistName}`,
-        `Tipo: ${order.prosthesisType}`,
-        `Material: ${order.material}`,
+        `Categoría: ${order.prosthesisType}`,
+        `Servicio: ${order.serviceName || 'Sin especificar'}`,
+        `Material: ${order.material || 'Sin especificar'}`,
+        `Piezas: ${order.dentalPieces || 'Sin especificar'}`,
         `Fecha de entrega: ${order.deliveryDate.toISOString()}`,
         `Prioridad: ${order.priority}`,
         order.attachmentUrl ? `Adjunto: ${order.attachmentUrl}` : `Adjunto: —`,

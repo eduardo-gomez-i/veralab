@@ -1,0 +1,4 @@
+ALTER TABLE `Order`
+  ADD COLUMN `serviceName` VARCHAR(191) NULL,
+  ADD COLUMN `dentalPieces` VARCHAR(191) NULL;
+

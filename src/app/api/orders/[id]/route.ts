@@ -20,7 +20,9 @@ export async function PUT(
       const keys = [
         'patientName',
         'prosthesisType',
+        'serviceName',
         'material',
+        'dentalPieces',
         'specifications',
         'deliveryDate',
         'status',

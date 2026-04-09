@@ -12,6 +12,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { DENTAL_PIECES, getServiceCategory, LAB_SERVICE_CATALOG } from '@/lib/order-catalog';
+
+interface NewOrderFormData {
+  patientName: string;
+  prosthesisType: ProsthesisType;
+  serviceName: string;
+  material: Material;
+  dentalPieces: string;
+  specifications: string;
+  deliveryDate: string;
+  notes: string;
+  priority: Priority;
+}
 
 const NewOrder = () => {
   const router = useRouter();
@@ -19,20 +32,54 @@ const NewOrder = () => {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [attachment, setAttachment] = useState<File | null>(null);
+  const defaultCategory = LAB_SERVICE_CATALOG[0];
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<NewOrderFormData>({
     patientName: '',
-    prosthesisType: 'corona' as ProsthesisType,
-    material: 'ceramica' as Material,
+    prosthesisType: defaultCategory.value as ProsthesisType,
+    serviceName: String(defaultCategory.services[0] || ''),
+    material: defaultCategory.materials[0] as Material,
+    dentalPieces: '',
     specifications: '',
     deliveryDate: '',
     notes: '',
     priority: 'normal' as Priority,
   });
 
-  const handleChange = (field: string, value: string) => {
+  const selectedCategory = getServiceCategory(formData.prosthesisType);
+
+  const handleChange = (field: keyof NewOrderFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
+
+  const handleCategoryChange = (value: string) => {
+    const category = getServiceCategory(value);
+    setFormData((prev) => ({
+      ...prev,
+      prosthesisType: value as ProsthesisType,
+      serviceName: String(category.services[0] || ''),
+      material: String(category.materials[0] || '') as Material,
+    }));
+  };
+
+  const handlePieceToggle = (piece: string) => {
+    const currentPieces = formData.dentalPieces
+      ? formData.dentalPieces.split(',').map((item) => item.trim()).filter(Boolean)
+      : [];
+
+    const nextPieces = currentPieces.includes(piece)
+      ? currentPieces.filter((item) => item !== piece)
+      : [...currentPieces, piece].sort((a, b) => Number(a) - Number(b));
+
+    setFormData((prev) => ({
+      ...prev,
+      dentalPieces: nextPieces.join(', '),
+    }));
+  };
+
+  const selectedPieces = formData.dentalPieces
+    ? formData.dentalPieces.split(',').map((item) => item.trim()).filter(Boolean)
+    : [];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,7 +125,7 @@ const NewOrder = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl text-blue-600">Nuevo Pedido de Prótesis</CardTitle>
+          <CardTitle className="text-2xl text-blue-600">Nuevo Pedido de Laboratorio</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -114,39 +161,58 @@ const NewOrder = () => {
             </div>
 
             <div className="space-y-4">
-              <h3 className="font-semibold text-lg border-b pb-2">Detalles de la Prótesis</h3>
+              <h3 className="font-semibold text-lg border-b pb-2">Servicio solicitado</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="prosthesisType">Tipo de Prótesis</Label>
-                  <Select value={formData.prosthesisType} onValueChange={(value) => handleChange('prosthesisType', value)}>
+                  <Label htmlFor="prosthesisType">Área del laboratorio</Label>
+                  <Select value={formData.prosthesisType} onValueChange={handleCategoryChange}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Seleccione tipo" />
+                      <SelectValue placeholder="Seleccione área" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="corona">Corona</SelectItem>
-                      <SelectItem value="puente">Puente</SelectItem>
-                      <SelectItem value="implante">Implante</SelectItem>
-                      <SelectItem value="protesis_removible">Prótesis Removible</SelectItem>
-                      <SelectItem value="carilla">Carilla</SelectItem>
+                      {LAB_SERVICE_CATALOG.map((category) => (
+                        <SelectItem key={category.value} value={category.value}>
+                          {category.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="material">Material</Label>
+                  <Label htmlFor="serviceName">Servicio</Label>
+                  <Select value={formData.serviceName} onValueChange={(value) => handleChange('serviceName', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccione servicio" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {selectedCategory.services.map((service) => (
+                        <SelectItem key={service} value={service}>
+                          {service}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="material">Material / variante</Label>
                   <Select value={formData.material} onValueChange={(value) => handleChange('material', value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccione material" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="ceramica">Cerámica</SelectItem>
-                      <SelectItem value="zirconio">Zirconio</SelectItem>
-                      <SelectItem value="metal_ceramica">Metal-Cerámica</SelectItem>
-                      <SelectItem value="acrilico">Acrílico</SelectItem>
+                      {selectedCategory.materials.map((material) => (
+                        <SelectItem key={material} value={material}>
+                          {material}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="priority">Prioridad</Label>
                   <Select value={formData.priority} onValueChange={(value) => handleChange('priority', value)}>
@@ -161,15 +227,48 @@ const NewOrder = () => {
                     </SelectContent>
                   </Select>
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="dentalPieces">Piezas dentales</Label>
+                  <Input
+                    id="dentalPieces"
+                    value={formData.dentalPieces}
+                    onChange={(e) => handleChange('dentalPieces', e.target.value)}
+                    placeholder="Ej. 11, 12, 21"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <Label>Selector rápido de piezas</Label>
+                <div className="space-y-2 rounded-md border p-3">
+                  {DENTAL_PIECES.map((row, rowIndex) => (
+                    <div key={rowIndex} className="grid grid-cols-8 gap-2">
+                      {row.map((piece) => (
+                        <button
+                          key={piece}
+                          type="button"
+                          className={`rounded-md border px-2 py-2 text-sm font-medium transition-colors ${
+                            selectedPieces.includes(piece)
+                              ? 'border-blue-600 bg-blue-50 text-blue-700'
+                              : 'border-gray-200 bg-white text-gray-700 hover:border-blue-300 hover:text-blue-700'
+                          }`}
+                          onClick={() => handlePieceToggle(piece)}
+                        >
+                          {piece}
+                        </button>
+                      ))}
+                    </div>
+                  ))}
+                </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="specifications">Especificaciones Técnicas / Color</Label>
+                <Label htmlFor="specifications">Especificaciones técnicas</Label>
                 <Textarea
                   id="specifications"
                   value={formData.specifications}
                   onChange={(e) => handleChange('specifications', e.target.value)}
-                  placeholder="Ej. Color A2, antagonista en oclusión..."
+                  placeholder="Ej. color, tipo de terminado, indicaciones clínicas, antagonista, diseño o requerimientos del laboratorio..."
                   className="min-h-[100px]"
                 />
               </div>
@@ -222,4 +321,3 @@ const NewOrder = () => {
 };
 
 export default NewOrder;
-
