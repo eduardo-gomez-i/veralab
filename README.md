@@ -40,6 +40,7 @@ export default tseslint.config({
 SEED_ADMIN_USERNAME=admin
 SEED_ADMIN_NAME=Administrador del Sistema
 SEED_ADMIN_PASSWORD=coloca_aqui_una_contrasena_segura_y_larga
+SEED_ADMIN_PASSWORD_MIN_LENGTH=12
 ```
 
 Recomendación: usa una contraseña de al menos 16 caracteres, aleatoria y única para producción.

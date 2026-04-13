@@ -14,10 +14,14 @@ async function main() {
   const adminUsername = process.env.SEED_ADMIN_USERNAME || 'admin';
   const adminName = process.env.SEED_ADMIN_NAME || 'Administrador del Sistema';
   const adminPasswordPlain = process.env.SEED_ADMIN_PASSWORD;
+  const minPasswordLengthRaw = process.env.SEED_ADMIN_PASSWORD_MIN_LENGTH ?? '12';
+  const minPasswordLength = Number.isFinite(Number(minPasswordLengthRaw))
+    ? Math.max(0, Math.trunc(Number(minPasswordLengthRaw)))
+    : 12;
 
-  if (!adminPasswordPlain || adminPasswordPlain.length < 12) {
+  if (!adminPasswordPlain || adminPasswordPlain.length < minPasswordLength) {
     throw new Error(
-      'SEED_ADMIN_PASSWORD es requerido y debe tener al menos 12 caracteres para crear el admin.'
+      `SEED_ADMIN_PASSWORD es requerido y debe tener al menos ${minPasswordLength} caracteres para crear el admin.`
     );
   }
 
