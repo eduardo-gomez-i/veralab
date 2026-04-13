@@ -34,25 +34,34 @@ export default tseslint.config({
 ## Prisma (Producción)
 
 1. Configura `DATABASE_URL` en el entorno del servidor (archivo `.env` local al servidor o variables de entorno). No subas `.env` a Git.
-2. Instala dependencias:
+2. Define también las variables del usuario admin que sembrará Prisma:
+
+```bash
+SEED_ADMIN_USERNAME=admin
+SEED_ADMIN_NAME=Administrador del Sistema
+SEED_ADMIN_PASSWORD=coloca_aqui_una_contrasena_segura_y_larga
+```
+
+Recomendación: usa una contraseña de al menos 16 caracteres, aleatoria y única para producción.
+3. Instala dependencias:
 
 ```bash
 npm ci
 ```
 
-3. Genera el cliente de Prisma:
+4. Genera el cliente de Prisma:
 
 ```bash
 npm run prisma:generate
 ```
 
-4. Aplica migraciones en producción:
+5. Aplica migraciones en producción:
 
 ```bash
 npm run prisma:migrate:deploy
 ```
 
-5. (Opcional / recomendado solo en el primer deploy) Ejecuta el seeder:
+6. Ejecuta el seeder base:
 
 ```bash
 npm run prisma:seed
@@ -60,7 +69,40 @@ npm run prisma:seed
 
 Notas:
 - En producción usa `prisma migrate deploy` (no `migrate dev`).
-- El seeder actual es idempotente (usa `upsert`), así que puede ejecutarse más de una vez sin duplicar usuarios.
+- El seeder actual crea o actualiza solo el usuario admin.
+- El seeder actual es idempotente (usa `upsert`), así que puede ejecutarse más de una vez sin duplicar el admin.
+
+### Reiniciar la base para producción
+
+Usa este flujo solo si realmente quieres empezar desde cero:
+
+1. Respaldar la base actual.
+2. Detener la aplicación.
+3. Vaciar completamente la base o recrearla.
+4. Ejecutar:
+
+```bash
+npm ci
+npm run prisma:generate
+npm run prisma:migrate:deploy
+npm run prisma:seed
+```
+
+5. Iniciar la aplicación nuevamente.
+
+### Si la base ya existe y Prisma marca P3005
+
+Si ves que la base no está vacía y Prisma pide baseline, primero marca la migración inicial como aplicada:
+
+```bash
+npx prisma migrate resolve --applied 20260331120000_init
+```
+
+Después aplica pendientes:
+
+```bash
+npm run prisma:migrate:deploy
+```
 
 You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
 

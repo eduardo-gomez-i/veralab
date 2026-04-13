@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -62,7 +62,7 @@ const Login = () => {
               <Input
                 id="username"
                 type="text"
-                placeholder="dentista o admin"
+                placeholder="Tu usuario"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 disabled={isLoading}
@@ -93,25 +93,9 @@ const Login = () => {
             </Button>
           </form>
         </CardContent>
-        <CardFooter className="flex flex-col space-y-2 text-sm text-gray-500 text-center">
-          <p>Credenciales de prueba:</p>
-          <div className="grid grid-cols-2 gap-4 w-full text-xs">
-            <div className="bg-gray-100 p-2 rounded">
-              <p className="font-semibold">Dentista</p>
-              <p>User: dentista</p>
-              <p>Pass: demo123</p>
-            </div>
-            <div className="bg-gray-100 p-2 rounded">
-              <p className="font-semibold">Admin</p>
-              <p>User: admin</p>
-              <p>Pass: admin123</p>
-            </div>
-          </div>
-        </CardFooter>
       </Card>
     </div>
   );
 };
 
 export default Login;
-

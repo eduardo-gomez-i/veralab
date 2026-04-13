@@ -11,32 +11,39 @@ async function main() {
     throw new Error('DATABASE_URL no está configurado. Define DATABASE_URL antes de ejecutar el seed.')
   }
 
-  const dentistaPassword = await bcrypt.hash('demo123', 10);
-  const adminPassword = await bcrypt.hash('admin123', 10);
+  const adminUsername = process.env.SEED_ADMIN_USERNAME || 'admin';
+  const adminName = process.env.SEED_ADMIN_NAME || 'Administrador del Sistema';
+  const adminPasswordPlain = process.env.SEED_ADMIN_PASSWORD;
 
-  const dentista = await prisma.user.upsert({
-    where: { username: 'dentista' },
-    update: {},
-    create: {
-      username: 'dentista',
-      password: dentistaPassword,
-      role: 'dentista',
-      name: 'Dr. Juan Pérez',
-    },
-  });
+  if (!adminPasswordPlain || adminPasswordPlain.length < 12) {
+    throw new Error(
+      'SEED_ADMIN_PASSWORD es requerido y debe tener al menos 12 caracteres para crear el admin.'
+    );
+  }
 
+  const adminPassword = await bcrypt.hash(adminPasswordPlain, 10);
   const admin = await prisma.user.upsert({
-    where: { username: 'admin' },
-    update: {},
+    where: { username: adminUsername },
+    update: {
+      name: adminName,
+      password: adminPassword,
+    },
     create: {
-      username: 'admin',
+      username: adminUsername,
       password: adminPassword,
       role: 'admin',
-      name: 'Administrador del Sistema',
+      name: adminName,
     },
   });
 
-  console.log({ dentista, admin });
+  console.log({
+    admin: {
+      id: admin.id,
+      username: admin.username,
+      name: admin.name,
+      role: admin.role,
+    },
+  });
 }
 
 main()
