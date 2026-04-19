@@ -9,7 +9,7 @@ export async function GET(request: Request) {
 
     const where: any = {};
 
-    if (role === 'dentista' && dentistId) {
+    if (role === 'dentist' && dentistId) {
       where.order = {
         dentistId,
       };

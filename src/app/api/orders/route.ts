@@ -84,6 +84,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'ID del dentista es requerido' }, { status: 400 });
     }
 
+    // Verificar que el dentista esté aprobado
+    const dentist = await prisma.user.findUnique({
+      where: { id: payload.dentistId },
+      select: { verified: true, role: true },
+    });
+
+    if (!dentist) {
+      return NextResponse.json({ error: 'Dentista no encontrado' }, { status: 404 });
+    }
+
+    if (dentist.role === 'dentist' && !dentist.verified) {
+      return NextResponse.json(
+        { error: 'Tu cuenta aún no ha sido verificada. Espera la aprobación del administrador.' },
+        { status: 403 }
+      );
+    }
+
     const order = await prisma.order.create({
       data: {
         patientName: payload.patientName,

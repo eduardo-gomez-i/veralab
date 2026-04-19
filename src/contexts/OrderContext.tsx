@@ -43,7 +43,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       
       // Filtrar por rol si es necesario (el backend devuelve todo por ahora)
       // En una app real, el backend debería filtrar por usuario si no es admin
-      if (user.role === 'dentista') {
+      if (user.role === 'dentist') {
         data = data.filter(o => o.dentistId === user.id);
       }
       

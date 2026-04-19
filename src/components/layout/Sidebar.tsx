@@ -2,7 +2,7 @@
 
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, PlusCircle, History, LogOut, Users, CalendarDays } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, History, LogOut, Users, CalendarDays, Clock } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
@@ -49,7 +49,14 @@ export const Sidebar = ({ onClose }: SidebarProps) => {
             Dashboard
           </Link>
           
-          {user.role === 'dentista' && (
+          {user.role === 'dentist' && !user.verified && (
+            <div className="flex items-start gap-2 px-3 py-2 rounded-md bg-yellow-50 text-yellow-800 text-xs">
+              <Clock size={14} className="mt-0.5 shrink-0" />
+              <span>Cuenta pendiente de verificación. No puedes crear pedidos hasta ser aprobado.</span>
+            </div>
+          )}
+
+          {user.role === 'dentist' && user.verified && (
             <Link
               href="/orders/new"
               onClick={handleLinkClick}

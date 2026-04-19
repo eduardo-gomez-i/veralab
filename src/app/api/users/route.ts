@@ -9,7 +9,9 @@ export async function GET() {
         id: true,
         username: true,
         name: true,
+        email: true,
         role: true,
+        verified: true,
         createdAt: true,
       },
       orderBy: {
@@ -54,12 +56,15 @@ export async function POST(request: Request) {
         password: hashedPassword,
         name,
         role,
+        verified: true, // Admin-created users are pre-approved
       },
       select: {
         id: true,
         username: true,
         name: true,
+        email: true,
         role: true,
+        verified: true,
         createdAt: true,
       },
     });

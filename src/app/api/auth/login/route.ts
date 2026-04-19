@@ -6,8 +6,22 @@ export async function POST(request: Request) {
   try {
     const { username, password } = await request.json();
 
-    const user = await prisma.user.findUnique({
-      where: { username },
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { username },
+          { email: username },
+        ],
+      },
+      select: {
+        id: true,
+        username: true,
+        name: true,
+        role: true,
+        email: true,
+        verified: true,
+        password: true,
+      },
     });
 
     if (!user) {
@@ -18,6 +32,13 @@ export async function POST(request: Request) {
 
     if (!isValid) {
       return NextResponse.json({ error: 'Credenciales inválidas' }, { status: 401 });
+    }
+
+    if (user.role === 'dentist' && !user.verified) {
+      return NextResponse.json(
+        { error: 'Tu cuenta está pendiente de verificación. El administrador te avisará por correo cuando sea aprobada.' },
+        { status: 403 }
+      );
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

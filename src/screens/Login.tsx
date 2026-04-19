@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,11 +29,11 @@ const Login = () => {
     setError('');
 
     try {
-      const success = await login(username, password);
+      const { success, message } = await login(username, password);
       if (success) {
         router.push('/dashboard');
       } else {
-        setError('Credenciales inválidas. Intente nuevamente.');
+        setError(message || 'Credenciales inválidas. Intente nuevamente.');
       }
     } catch {
       setError('Ocurrió un error al iniciar sesión.');
@@ -58,11 +59,11 @@ const Login = () => {
               </div>
             )}
             <div className="space-y-2">
-              <Label htmlFor="username">Usuario</Label>
+              <Label htmlFor="username">Usuario o correo</Label>
               <Input
                 id="username"
                 type="text"
-                placeholder="Tu usuario"
+                placeholder="Tu usuario o correo"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 disabled={isLoading}
@@ -91,6 +92,12 @@ const Login = () => {
                 'Iniciar Sesión'
               )}
             </Button>
+            <p className="text-center text-sm text-gray-500">
+              ¿No tienes cuenta?{' '}
+              <Link href="/register" className="text-blue-600 hover:underline font-medium">
+                Registrate aquí
+              </Link>
+            </p>
           </form>
         </CardContent>
       </Card>

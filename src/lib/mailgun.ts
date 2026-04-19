@@ -2,6 +2,7 @@ export type MailgunSendMessageInput = {
   to: string
   subject: string
   text: string
+  html?: string
 }
 
 function getMailgunConfig() {
@@ -30,6 +31,9 @@ export async function sendMailgunMessage(input: MailgunSendMessageInput) {
   body.set('to', input.to)
   body.set('subject', input.subject)
   body.set('text', input.text)
+  if (input.html) {
+    body.set('html', input.html)
+  }
 
   const res = await fetch(url, {
     method: 'POST',
@@ -45,4 +49,3 @@ export async function sendMailgunMessage(input: MailgunSendMessageInput) {
     throw new Error(`Mailgun error (${res.status}): ${text}`)
   }
 }
-

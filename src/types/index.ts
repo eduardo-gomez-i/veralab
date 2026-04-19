@@ -1,10 +1,12 @@
-export type UserRole = 'dentista' | 'admin';
+export type UserRole = 'dentist' | 'admin';
 
 export interface User {
   id: string;
   username: string;
   role: UserRole;
   name: string;
+  email?: string;
+  verified: boolean;
 }
 
 export type ProsthesisType = string;

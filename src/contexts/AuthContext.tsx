@@ -8,7 +8,7 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (username: string, password: string) => Promise<boolean>;
+  login: (username: string, password: string) => Promise<{ success: boolean; message?: string }>;
   logout: () => void;
 }
 
@@ -37,7 +37,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(false);
   }, []);
 
-  const login = async (username: string, password: string): Promise<boolean> => {
+  const login = async (username: string, password: string): Promise<{ success: boolean; message?: string }> => {
     setIsLoading(true);
     try {
       const response = await fetch('/api/auth/login', {
@@ -49,18 +49,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (response.ok) {
         const authenticatedUser = await response.json();
         setUser(authenticatedUser);
-        
-        // Update localStorage as backup
         localStorage.setItem('dp_auth', JSON.stringify(authenticatedUser));
-        
-        // Cookie is set by the server response header
-        
-        return true;
+        return { success: true };
       }
-      return false;
+
+      const data = await response.json().catch(() => ({}));
+      return { success: false, message: data.error };
     } catch (error) {
       console.error("Login error:", error);
-      return false;
+      return { success: false };
     } finally {
       setIsLoading(false);
     }

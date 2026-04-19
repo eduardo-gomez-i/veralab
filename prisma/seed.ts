@@ -31,12 +31,14 @@ async function main() {
     update: {
       name: adminName,
       password: adminPassword,
+      verified: true,
     },
     create: {
       username: adminUsername,
       password: adminPassword,
       role: 'admin',
       name: adminName,
+      verified: true,
     },
   });
 

@@ -106,7 +106,7 @@ const Dashboard = () => {
         </div>
         <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
           <DatePickerWithRange date={dateRange} setDate={setDateRange} className="w-full md:w-auto" />
-          {user?.role === 'dentista' && (
+          {user?.role === 'dentist' && user?.verified && (
             <Button onClick={() => router.push('/orders/new')} className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto">
               <PlusCircle className="mr-2 h-4 w-4" />
               Nuevo Pedido
@@ -210,7 +210,7 @@ const Dashboard = () => {
         ) : (
           <div className="text-center py-12 bg-white rounded-lg border border-dashed">
             <p className="text-gray-500">No hay pedidos activos en este momento.</p>
-            {user?.role === 'dentista' && (
+            {user?.role === 'dentist' && user?.verified && (
               <Button variant="link" onClick={() => router.push('/orders/new')} className="mt-2 text-blue-600">
                 Crear un nuevo pedido
               </Button>

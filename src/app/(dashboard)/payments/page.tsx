@@ -37,7 +37,7 @@ export default function PaymentsPage() {
       try {
         const params = new URLSearchParams();
         params.set('role', user.role);
-        if (user.role === 'dentista') {
+        if (user.role === 'dentist') {
           params.set('dentistId', user.id);
         }
         const res = await fetch(`/api/payments?${params.toString()}`);
