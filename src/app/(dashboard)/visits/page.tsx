@@ -61,7 +61,8 @@ export default function VisitsPage() {
           id: u.id,
           username: u.username,
           name: u.name,
-          role: 'dentista',
+          role: 'dentist' as const,
+          verified: u.verified ?? true,
         }))
       );
     } catch (error) {
