@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useOrders } from '@/contexts/OrderContext';
 import { OrderTable } from '@/components/orders/OrderTable';
 import { Input } from '@/components/ui/input';
@@ -13,11 +13,12 @@ const History = () => {
   const { orders, refreshOrders, setFilters } = useOrders();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [archiveFilter, setArchiveFilter] = useState<'active' | 'archived' | 'all'>('active');
   const [initializedFromQuery, setInitializedFromQuery] = useState(false);
 
   useEffect(() => {
-    refreshOrders();
-  }, [refreshOrders]);
+    refreshOrders({ includeArchived: archiveFilter !== 'active' });
+  }, [refreshOrders, archiveFilter]);
 
   useEffect(() => {
     if (initializedFromQuery) return;
@@ -37,6 +38,12 @@ const History = () => {
 
     setFilters(filters);
   }, [searchTerm, statusFilter, setFilters]);
+
+  const visibleOrders = useMemo(() => {
+    if (archiveFilter === 'active') return orders.filter((o) => !o.archivedAt);
+    if (archiveFilter === 'archived') return orders.filter((o) => Boolean(o.archivedAt));
+    return orders;
+  }, [orders, archiveFilter]);
 
   return (
     <div className="space-y-6">
@@ -73,14 +80,25 @@ const History = () => {
                 </SelectContent>
               </Select>
             </div>
+            <div className="w-full md:w-[200px]">
+              <Select value={archiveFilter} onValueChange={(val) => setArchiveFilter(val as any)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Archivo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Activas</SelectItem>
+                  <SelectItem value="archived">Archivadas</SelectItem>
+                  <SelectItem value="all">Todas</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      <OrderTable orders={orders} />
+      <OrderTable orders={visibleOrders} includeArchived={archiveFilter !== 'active'} />
     </div>
   );
 };
 
 export default History;
-

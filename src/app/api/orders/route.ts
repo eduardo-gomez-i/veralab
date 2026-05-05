@@ -5,9 +5,13 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { sendMailgunMessage } from '@/lib/mailgun';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const includeArchived = searchParams.get('includeArchived') === 'true';
+
     const orders = await prisma.order.findMany({
+      where: includeArchived ? undefined : { archivedAt: null },
       orderBy: { createdAt: 'desc' },
       include: { payments: true },
     });

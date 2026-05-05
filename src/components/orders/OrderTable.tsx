@@ -21,11 +21,12 @@ import { useToast } from '@/hooks/use-toast';
 
 interface OrderTableProps {
   orders: Order[];
+  includeArchived?: boolean;
 }
 
-export const OrderTable = ({ orders }: OrderTableProps) => {
+export const OrderTable = ({ orders, includeArchived = false }: OrderTableProps) => {
   const { user } = useAuth();
-  const { updateOrderStatus, updateOrderAttachment, refreshOrders } = useOrders();
+  const { updateOrderStatus, updateOrderAttachment, archiveOrder, refreshOrders } = useOrders();
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const fileInputsRef = useRef<Record<string, HTMLInputElement | null>>({});
   const [selected, setSelected] = useState<Order | null>(null);
@@ -37,6 +38,7 @@ export const OrderTable = ({ orders }: OrderTableProps) => {
   const [paymentReceipt, setPaymentReceipt] = useState<File | null>(null);
   const [paymentLoading, setPaymentLoading] = useState(false);
   const { toast } = useToast();
+  const refreshOptions = includeArchived ? { includeArchived: true } : undefined;
 
   const openDetails = (order: Order) => {
     setSelected(order);
@@ -54,10 +56,41 @@ export const OrderTable = ({ orders }: OrderTableProps) => {
     return order.payments.reduce((sum, p) => sum + Number(p.amount), 0);
   };
 
+  const moneyToCents = (raw: unknown) => {
+    const value = String(raw ?? '').trim();
+    if (!/^\d+(\.\d{1,2})?$/.test(value)) return null;
+    const [whole, frac = ''] = value.split('.');
+    const cents = (frac + '00').slice(0, 2);
+    const wholeCents = Number(whole) * 100;
+    const fracCents = Number(cents);
+    if (!Number.isFinite(wholeCents) || !Number.isFinite(fracCents)) return null;
+    return wholeCents + fracCents;
+  };
+
+  const centsToMoney = (cents: number) => (Math.max(0, Math.trunc(cents)) / 100).toFixed(2);
+
+  const getPaidCents = (order: Order) => {
+    if (!order.payments || order.payments.length === 0) return 0;
+    return order.payments.reduce((sum, p) => sum + (moneyToCents(p.amount) ?? 0), 0);
+  };
+
   const handleStatusChange = async (orderId: string, newStatus: OrderStatus) => {
     setUpdatingId(orderId);
-    await updateOrderStatus(orderId, newStatus);
+    await updateOrderStatus(orderId, newStatus, refreshOptions);
     setUpdatingId(null);
+  };
+
+  const handleArchiveToggle = async (order: Order) => {
+    setUpdatingId(order.id);
+    try {
+      await archiveOrder(order.id, !order.archivedAt, refreshOptions);
+      if (!includeArchived && !order.archivedAt && selected?.id === order.id) {
+        setIsOpen(false);
+        setSelected(null);
+      }
+    } finally {
+      setUpdatingId(null);
+    }
   };
 
   const escapeHtml = (value: string) =>
@@ -327,6 +360,15 @@ export const OrderTable = ({ orders }: OrderTableProps) => {
                           <Printer className="h-4 w-4 mr-2" />
                           Imprimir nota
                         </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full"
+                          onClick={() => handleArchiveToggle(order)}
+                          disabled={updatingId === order.id}
+                        >
+                          {order.archivedAt ? 'Restaurar' : 'Archivar'}
+                        </Button>
                       </div>
                     </div>
                   )}
@@ -462,7 +504,7 @@ export const OrderTable = ({ orders }: OrderTableProps) => {
                                 if (!file) return;
                                 setUpdatingId(order.id);
                                 try {
-                                  await updateOrderAttachment(order.id, file);
+                                  await updateOrderAttachment(order.id, file, refreshOptions);
                                 } finally {
                                   setUpdatingId(null);
                                   if (fileInputsRef.current[order.id]) {
@@ -477,6 +519,14 @@ export const OrderTable = ({ orders }: OrderTableProps) => {
                               onClick={() => handlePrintOrder(order)}
                             >
                               <Printer className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleArchiveToggle(order)}
+                              disabled={updatingId === order.id}
+                            >
+                              {order.archivedAt ? 'Restaurar' : 'Archivar'}
                             </Button>
                             <Button
                               variant="ghost"
@@ -501,7 +551,7 @@ export const OrderTable = ({ orders }: OrderTableProps) => {
       </div>
       {selected && (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
-              <DialogContent className="max-w-3xl">
+              <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto overscroll-contain">
             <DialogHeader>
               <DialogTitle>Pedido #{selected.id}</DialogTitle>
               <DialogDescription>Detalles del pedido y adjunto</DialogDescription>
@@ -619,7 +669,7 @@ export const OrderTable = ({ orders }: OrderTableProps) => {
                               : null,
                           }),
                         });
-                        await refreshOrders();
+                        await refreshOrders(refreshOptions);
                       } finally {
                         setUpdatingId(null);
                       }
@@ -718,11 +768,42 @@ export const OrderTable = ({ orders }: OrderTableProps) => {
                     size="sm"
                     onClick={async () => {
                       if (!selected) return;
+                      if (paymentLoading) return;
                       if (!paymentAmount) {
                         toast({
                           variant: 'destructive',
                           title: 'Monto requerido',
                           description: 'Debes ingresar un monto para el pago.',
+                        });
+                        return;
+                      }
+                      const amountCents = moneyToCents(paymentAmount);
+                      if (amountCents === null || amountCents <= 0) {
+                        toast({
+                          variant: 'destructive',
+                          title: 'Monto inválido',
+                          description: 'Ingresa un valor mayor a 0 con hasta 2 decimales.',
+                        });
+                        return;
+                      }
+                      const totalCents = selected.totalPrice
+                        ? moneyToCents(selected.totalPrice)
+                        : null;
+                      if (totalCents === null) {
+                        toast({
+                          variant: 'destructive',
+                          title: 'Costo total requerido',
+                          description: 'Asigna un costo total antes de registrar pagos.',
+                        });
+                        return;
+                      }
+                      const paidCents = getPaidCents(selected);
+                      const remainingCents = totalCents - paidCents;
+                      if (amountCents > remainingCents) {
+                        toast({
+                          variant: 'destructive',
+                          title: 'Pago excede el total',
+                          description: `Saldo disponible: ${centsToMoney(remainingCents)}`,
                         });
                         return;
                       }
@@ -764,7 +845,7 @@ export const OrderTable = ({ orders }: OrderTableProps) => {
                         setPaymentAmount('');
                         setPaymentDate('');
                         setPaymentReceipt(null);
-                        await refreshOrders();
+                        await refreshOrders(refreshOptions);
                       } finally {
                         setPaymentLoading(false);
                       }

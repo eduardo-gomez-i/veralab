@@ -30,6 +30,7 @@ export async function PUT(
         'priority',
         'totalPrice',
         'estimatedDeliveryDate',
+        'archivedAt',
       ];
       keys.forEach((k) => {
         if (form.has(k)) {
@@ -74,6 +75,11 @@ export async function PUT(
     }
     if (updateData.estimatedDeliveryDate) {
       updateData.estimatedDeliveryDate = new Date(updateData.estimatedDeliveryDate);
+    }
+    if (updateData.archivedAt === '') {
+      updateData.archivedAt = null;
+    } else if (updateData.archivedAt) {
+      updateData.archivedAt = new Date(updateData.archivedAt);
     }
     
     // Limpieza de campos que no deben actualizarse directamente o causan conflicto

@@ -48,10 +48,11 @@ export interface Order {
   createdAt: string; // ISO Date string
   notes?: string;
   priority: Priority;
-   attachmentUrl?: string;
-   totalPrice?: string;
-   estimatedDeliveryDate?: string;
-   payments?: Payment[];
+  attachmentUrl?: string;
+  totalPrice?: string;
+  estimatedDeliveryDate?: string;
+  archivedAt?: string | null;
+  payments?: Payment[];
 }
 
 export interface AuthState {

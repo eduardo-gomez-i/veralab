@@ -9,6 +9,10 @@ interface OrderFilters {
   searchTerm?: string;
 }
 
+interface RefreshOrdersOptions {
+  includeArchived?: boolean;
+}
+
 interface OrderContextType {
   orders: Order[];
   loading: boolean;
@@ -16,9 +20,10 @@ interface OrderContextType {
   filters: OrderFilters;
   setFilters: React.Dispatch<React.SetStateAction<OrderFilters>>;
   addOrder: (orderData: Omit<Order, 'id' | 'createdAt' | 'dentistName' | 'dentistId'>, attachment?: File | null) => Promise<void>;
-  updateOrderStatus: (orderId: string, status: OrderStatus) => Promise<void>;
-  updateOrderAttachment: (orderId: string, attachment: File) => Promise<void>;
-  refreshOrders: () => void;
+  updateOrderStatus: (orderId: string, status: OrderStatus, options?: RefreshOrdersOptions) => Promise<void>;
+  updateOrderAttachment: (orderId: string, attachment: File, options?: RefreshOrdersOptions) => Promise<void>;
+  archiveOrder: (orderId: string, archive: boolean, options?: RefreshOrdersOptions) => Promise<void>;
+  refreshOrders: (options?: RefreshOrdersOptions) => void;
 }
 
 const OrderContext = createContext<OrderContextType | undefined>(undefined);
@@ -31,12 +36,15 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<OrderFilters>({});
 
-  const fetchOrders = useCallback(async () => {
+  const fetchOrders = useCallback(async (options?: RefreshOrdersOptions) => {
     if (!user) return;
     
     setLoading(true);
     try {
-      const response = await fetch('/api/orders');
+      const qs = new URLSearchParams();
+      if (options?.includeArchived) qs.set('includeArchived', 'true');
+      const url = qs.toString() ? `/api/orders?${qs.toString()}` : '/api/orders';
+      const response = await fetch(url);
       if (!response.ok) throw new Error('Error fetching orders');
       
       let data: Order[] = await response.json();
@@ -139,7 +147,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  const updateOrderAttachment = async (orderId: string, attachment: File) => {
+  const updateOrderAttachment = async (orderId: string, attachment: File, options?: RefreshOrdersOptions) => {
     setLoading(true);
     try {
       const form = new FormData();
@@ -149,7 +157,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         body: form,
       });
       if (!response.ok) throw new Error('Failed to update attachment');
-      await fetchOrders();
+      await fetchOrders(options);
     } catch (err) {
       setError('Error al actualizar adjunto');
       console.error(err);
@@ -159,7 +167,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  const updateOrderStatus = async (orderId: string, status: OrderStatus) => {
+  const updateOrderStatus = async (orderId: string, status: OrderStatus, options?: RefreshOrdersOptions) => {
     setLoading(true);
     try {
       const response = await fetch(`/api/orders/${orderId}`, {
@@ -170,9 +178,30 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       if (!response.ok) throw new Error('Failed to update status');
       
-      await fetchOrders();
+      await fetchOrders(options);
     } catch (err) {
       setError('Error al actualizar estado');
+      console.error(err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const archiveOrder = async (orderId: string, archive: boolean, options?: RefreshOrdersOptions) => {
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/orders/${orderId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ archivedAt: archive ? new Date().toISOString() : null }),
+      });
+
+      if (!response.ok) throw new Error('Failed to archive order');
+
+      await fetchOrders(options);
+    } catch (err) {
+      setError('Error al archivar pedido');
       console.error(err);
       throw err;
     } finally {
@@ -191,6 +220,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         addOrder,
         updateOrderStatus,
         updateOrderAttachment,
+        archiveOrder,
         refreshOrders: fetchOrders,
       }}
     >

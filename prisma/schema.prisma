@@ -36,6 +36,7 @@ model Order {
   attachmentUrl  String?
   totalPrice     Decimal? @db.Decimal(10, 2)
   estimatedDeliveryDate DateTime?
+  archivedAt     DateTime?
   
   dentistId      String
   dentist        User     @relation(fields: [dentistId], references: [id])
@@ -45,6 +46,8 @@ model Order {
 
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+
+  @@index([archivedAt])
 }
 
 model Payment {
