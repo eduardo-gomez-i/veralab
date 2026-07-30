@@ -7,7 +7,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Card, CardContent } from '@/components/ui/card';
 import { StatusBadge } from './StatusBadge';
 import { formatDate, formatCurrency } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -15,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrders } from '@/contexts/OrderContext';
 import { useRef, useState } from 'react';
-import { Loader2, Paperclip, ChevronRight, User, Calendar, DollarSign, Printer } from 'lucide-react';
+import { Loader2, Paperclip, ChevronRight, User, Calendar, DollarSign, Printer, Search } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 
@@ -259,48 +258,55 @@ export const OrderTable = ({ orders, includeArchived = false }: OrderTableProps)
   return (
     <>
       {/* Mobile Card View */}
-      <div className="md:hidden space-y-4">
+      <div className="space-y-3 md:hidden">
         {orders.length === 0 ? (
-          <div className="text-center py-8 text-gray-500 bg-white rounded-lg border">
-            No se encontraron pedidos.
+          <div className="rounded-2xl border border-dashed bg-white px-6 py-12 text-center">
+            <Search className="mx-auto h-8 w-8 text-gray-300" />
+            <p className="mt-3 text-sm text-gray-500">No se encontraron pedidos.</p>
           </div>
         ) : (
           orders.map((order) => {
             const paid = getPaidAmount(order);
             const total = order.totalPrice ? Number(order.totalPrice) : null;
             const remaining = total !== null ? Number((total - paid).toFixed(2)) : null;
-            
+
             return (
-              <Card key={order.id} className="overflow-hidden">
-                <CardContent className="p-4 space-y-3">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <span className="text-xs font-mono text-gray-500">#{order.id}</span>
-                      <h3 className="font-semibold text-gray-900">{order.patientName}</h3>
-                      <p className="text-sm text-gray-500 flex items-center gap-1">
-                        <User className="h-3 w-3" /> {order.dentistName}
+              <div key={order.id} className="overflow-hidden rounded-2xl border bg-white shadow-sm">
+                {/* Tapping anywhere on the summary opens the detail sheet. */}
+                <button
+                  type="button"
+                  onClick={() => openDetails(order)}
+                  className="tap-scale block w-full p-4 text-left"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <span className="font-mono text-xs text-gray-500">#{order.id}</span>
+                      <h3 className="truncate font-semibold text-gray-900">{order.patientName}</h3>
+                      <p className="flex items-center gap-1 truncate text-sm text-gray-500">
+                        <User className="h-3 w-3 shrink-0" /> {order.dentistName}
                       </p>
                     </div>
                     <StatusBadge status={order.status} />
                   </div>
-                  
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div className="bg-gray-50 p-2 rounded">
+
+                  <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+                    <div className="min-w-0 rounded-lg bg-gray-50 p-2">
                       <p className="text-xs text-gray-500">Área</p>
-                      <p className="font-medium capitalize">{order.prosthesisType}</p>
+                      <p className="truncate font-medium capitalize">{order.prosthesisType}</p>
                     </div>
-                    <div className="bg-gray-50 p-2 rounded">
+                    <div className="min-w-0 rounded-lg bg-gray-50 p-2">
                       <p className="text-xs text-gray-500">Entrega</p>
-                      <p className="font-medium flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
+                      <p className="flex items-center gap-1 truncate font-medium">
+                        <Calendar className="h-3 w-3 shrink-0" />
                         {formatDate(order.deliveryDate)}
                       </p>
                     </div>
                   </div>
-                  <div className="bg-gray-50 p-2 rounded text-sm">
+
+                  <div className="mt-2 rounded-lg bg-gray-50 p-2 text-sm">
                     <p className="text-xs text-gray-500">Servicio</p>
                     <p className="font-medium">{order.serviceName || 'Sin especificar'}</p>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="mt-1 text-xs text-gray-500">
                       Material: {order.material || 'Sin especificar'}
                     </p>
                     {order.dentalPieces && (
@@ -308,72 +314,63 @@ export const OrderTable = ({ orders, includeArchived = false }: OrderTableProps)
                     )}
                   </div>
 
-                  <div className="flex justify-between items-center pt-2 border-t">
+                  <div className="mt-3 flex items-center justify-between border-t pt-3">
                     <div className="flex items-center gap-2">
-                       {total === null ? (
-                        <span className="text-gray-400 text-xs">Sin asignar</span>
+                      {total === null ? (
+                        <span className="text-xs text-gray-400">Sin asignar</span>
                       ) : remaining !== null && remaining <= 0 ? (
-                        <span className="text-green-600 text-xs font-semibold flex items-center">
+                        <span className="flex items-center text-xs font-semibold text-green-600">
                           <DollarSign className="h-3 w-3" /> {formatCurrency(0)}
                         </span>
                       ) : (
-                        <span className="text-red-600 text-xs font-semibold flex items-center">
+                        <span className="flex items-center text-xs font-semibold text-red-600">
                           <DollarSign className="h-3 w-3" /> {formatCurrency(remaining || 0)}
                         </span>
                       )}
                     </div>
-                    <Button variant="ghost" size="sm" onClick={() => openDetails(order)} className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 p-0 h-auto">
-                      Ver detalles <ChevronRight className="h-4 w-4 ml-1" />
-                    </Button>
+                    <span className="flex items-center text-sm font-medium text-blue-600">
+                      Ver detalles <ChevronRight className="ml-1 h-4 w-4" />
+                    </span>
                   </div>
+                </button>
 
-                  {user?.role === 'admin' && (
-                    <div className="pt-2 border-t mt-2">
-                      <div className="space-y-2">
-                        <Select
-                          defaultValue={order.status}
-                          onValueChange={(val) =>
-                            handleStatusChange(order.id, val as OrderStatus)
-                          }
-                          disabled={updatingId === order.id}
-                        >
-                          <SelectTrigger className="w-full h-9">
-                            {updatingId === order.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin mx-auto" />
-                            ) : (
-                              <SelectValue />
-                            )}
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="pendiente">Pendiente</SelectItem>
-                            <SelectItem value="en_proceso">En Proceso</SelectItem>
-                            <SelectItem value="completado">Completado</SelectItem>
-                            <SelectItem value="entregado">Entregado</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full"
-                          onClick={() => handlePrintOrder(order)}
-                        >
-                          <Printer className="h-4 w-4 mr-2" />
-                          Imprimir nota
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full"
-                          onClick={() => handleArchiveToggle(order)}
-                          disabled={updatingId === order.id}
-                        >
-                          {order.archivedAt ? 'Restaurar' : 'Archivar'}
-                        </Button>
-                      </div>
+                {user?.role === 'admin' && (
+                  <div className="space-y-2 border-t bg-gray-50/60 p-4">
+                    <Select
+                      defaultValue={order.status}
+                      onValueChange={(val) => handleStatusChange(order.id, val as OrderStatus)}
+                      disabled={updatingId === order.id}
+                    >
+                      <SelectTrigger className="w-full">
+                        {updatingId === order.id ? (
+                          <Loader2 className="mx-auto h-4 w-4 animate-spin" />
+                        ) : (
+                          <SelectValue />
+                        )}
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pendiente">Pendiente</SelectItem>
+                        <SelectItem value="en_proceso">En Proceso</SelectItem>
+                        <SelectItem value="completado">Completado</SelectItem>
+                        <SelectItem value="entregado">Entregado</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button variant="outline" onClick={() => handlePrintOrder(order)}>
+                        <Printer className="h-4 w-4" />
+                        Imprimir
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => handleArchiveToggle(order)}
+                        disabled={updatingId === order.id}
+                      >
+                        {order.archivedAt ? 'Restaurar' : 'Archivar'}
+                      </Button>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
+                  </div>
+                )}
+              </div>
             );
           })
         )}
@@ -551,7 +548,10 @@ export const OrderTable = ({ orders, includeArchived = false }: OrderTableProps)
       </div>
       {selected && (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
-              <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto overscroll-contain">
+              <DialogContent
+                /* Phones get a full-width bottom sheet; md+ keeps the centred dialog. */
+                className="max-h-[90dvh] overflow-y-auto overscroll-contain max-md:bottom-0 max-md:left-0 max-md:right-0 max-md:top-auto max-md:max-h-[92dvh] max-md:w-full max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-t-2xl max-md:px-4 max-md:pb-[max(1.5rem,env(safe-area-inset-bottom))] max-md:pt-5 md:max-w-3xl"
+              >
             <DialogHeader>
               <DialogTitle>Pedido #{selected.id}</DialogTitle>
               <DialogDescription>Detalles del pedido y adjunto</DialogDescription>

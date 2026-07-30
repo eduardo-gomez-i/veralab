@@ -12,6 +12,27 @@ export default {
   			md: 'calc(var(--radius) - 2px)',
   			sm: 'calc(var(--radius) - 4px)'
   		},
+  		spacing: {
+  			// iOS/Android notch + home indicator insets.
+  			'safe-top': 'env(safe-area-inset-top, 0px)',
+  			'safe-bottom': 'env(safe-area-inset-bottom, 0px)',
+  			'safe-left': 'env(safe-area-inset-left, 0px)',
+  			'safe-right': 'env(safe-area-inset-right, 0px)',
+  			// Mobile shell chrome, so content can clear the fixed bars.
+  			header: 'var(--app-header-height)',
+  			tabbar: 'var(--app-tabbar-height)',
+  			'tabbar-safe': 'calc(var(--app-tabbar-height) + env(safe-area-inset-bottom, 0px))',
+  			'header-safe': 'calc(var(--app-header-height) + env(safe-area-inset-top, 0px))',
+  			// Padding for scrollable content so it clears both fixed bars.
+  			'content-top': 'calc(var(--app-header-height) + env(safe-area-inset-top, 0px) + 1rem)',
+  			'content-bottom': 'calc(var(--app-tabbar-height) + env(safe-area-inset-bottom, 0px) + 1.5rem)'
+  		},
+  		minHeight: {
+  			touch: '44px'
+  		},
+  		minWidth: {
+  			touch: '44px'
+  		},
   		colors: {
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
@@ -63,10 +84,20 @@ export default {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        "screen-in": {
+          from: { opacity: "0", transform: "translateY(8px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+        "rise-in": {
+          from: { opacity: "0", transform: "translateY(14px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "screen-in": "screen-in 0.22s cubic-bezier(0.32, 0.72, 0, 1)",
+        "rise-in": "rise-in 0.3s cubic-bezier(0.32, 0.72, 0, 1) both",
       },
   	}
   },

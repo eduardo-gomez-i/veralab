@@ -4,9 +4,22 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrders } from '@/contexts/OrderContext';
 import { OrderCard } from '@/components/orders/OrderCard';
+import { StatCard } from '@/components/dashboard/StatCard';
+import { ActionTile } from '@/components/dashboard/ActionTile';
+import { getNavItems } from '@/components/layout/nav-items';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Loader2, TrendingUp, CreditCard, DollarSign, Package, CheckCircle2, Clock } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import {
+  Loader2,
+  TrendingUp,
+  CreditCard,
+  DollarSign,
+  Package,
+  CheckCircle2,
+  Clock,
+  ChevronRight,
+  SlidersHorizontal,
+} from 'lucide-react';
+import Link from 'next/link';
 import { DatePickerWithRange } from '@/components/ui/date-range-picker';
 import { DateRange } from 'react-day-picker';
 import { isWithinInterval, startOfDay, endOfDay } from 'date-fns';
@@ -15,8 +28,8 @@ import { formatCurrency } from '@/lib/utils';
 const Dashboard = () => {
   const { user } = useAuth();
   const { orders, loading, refreshOrders } = useOrders();
-  const router = useRouter();
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const [showFilter, setShowFilter] = useState(false);
 
   useEffect(() => {
     refreshOrders();
@@ -89,9 +102,18 @@ const Dashboard = () => {
     }, 0);
   }, [orders]);
 
+  // Quick-access tiles mirror the nav, minus the screen we are already on.
+  const tiles = useMemo(
+    () => (user ? getNavItems(user).filter((item) => item.href !== '/dashboard') : []),
+    [user]
+  );
+
+  const isAdmin = user?.role === 'admin';
+  const periodHint = dateRange ? 'En el periodo seleccionado' : 'Histórico total';
+
   if (loading && orders.length === 0) {
     return (
-      <div className="flex justify-center items-center h-64">
+      <div className="flex h-64 items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
       </div>
     );
@@ -99,128 +121,167 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Hola, {user?.name}</h1>
-          <p className="text-gray-500">Bienvenido a tu panel de control</p>
+          <p className="text-sm text-gray-500">Hola,</p>
+          <h1 className="text-2xl font-bold text-gray-900">{user?.name}</h1>
         </div>
-        <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-          <DatePickerWithRange date={dateRange} setDate={setDateRange} className="w-full md:w-auto" />
-          {user?.role === 'dentist' && user?.verified && (
-            <Button onClick={() => router.push('/orders/new')} className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto">
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Nuevo Pedido
-            </Button>
+
+        {/* Phones get a toggle so the date picker does not eat the first screen. */}
+        <div className="md:hidden">
+          <Button
+            variant="outline"
+            className="w-full justify-between"
+            onClick={() => setShowFilter((prev) => !prev)}
+          >
+            <span className="flex items-center gap-2">
+              <SlidersHorizontal size={16} />
+              {dateRange?.from ? 'Periodo filtrado' : 'Filtrar por periodo'}
+            </span>
+            <ChevronRight
+              size={16}
+              className={`transition-transform ${showFilter ? 'rotate-90' : ''}`}
+            />
+          </Button>
+          {showFilter && (
+            <div className="mt-3 space-y-2">
+              <DatePickerWithRange date={dateRange} setDate={setDateRange} />
+              {dateRange?.from && (
+                <Button variant="ghost" className="w-full" onClick={() => setDateRange(undefined)}>
+                  Limpiar filtro
+                </Button>
+              )}
+            </div>
           )}
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-6 rounded-xl shadow-sm border flex flex-col justify-between">
-          <div className="flex justify-between items-start mb-2">
-            <div>
-              <p className="text-sm font-medium text-gray-500">Pedidos Generados</p>
-              <h3 className="text-2xl font-bold text-gray-900 mt-1">{kpis.totalOrders}</h3>
-            </div>
-            <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
-              <Package size={20} />
-            </div>
-          </div>
-          <div className="text-xs text-gray-500 mt-2">{dateRange ? 'En el periodo seleccionado' : 'Histórico total'}</div>
+        <div className="hidden md:block">
+          <DatePickerWithRange date={dateRange} setDate={setDateRange} />
         </div>
+      </header>
 
-        {user?.role === 'admin' ? (
-          <div className="bg-white p-6 rounded-xl shadow-sm border flex flex-col justify-between">
-            <div className="flex justify-between items-start mb-2">
-              <div>
-                <p className="text-sm font-medium text-gray-500">Ventas Totales</p>
-                <h3 className="text-2xl font-bold text-gray-900 mt-1">{formatCurrency(kpis.totalSales)}</h3>
-              </div>
-              <div className="p-2 bg-green-50 rounded-lg text-green-600">
-                <TrendingUp size={20} />
-              </div>
-            </div>
-            <div className="text-xs text-gray-500 mt-2">Valor de pedidos creados</div>
+      {user?.role === 'dentist' && !user.verified && (
+        <div className="flex items-start gap-3 rounded-2xl bg-amber-50 p-4 text-sm text-amber-900">
+          <Clock size={18} className="mt-0.5 shrink-0" />
+          <div>
+            <p className="font-semibold">Cuenta pendiente de verificación</p>
+            <p className="mt-0.5 text-amber-800">
+              Un administrador debe aprobar tu cuenta antes de que puedas crear pedidos.
+            </p>
           </div>
+        </div>
+      )}
+
+      <section className="grid grid-cols-2 gap-3 md:grid-cols-2 md:gap-4 lg:grid-cols-4">
+        <StatCard
+          label="Pedidos Generados"
+          value={kpis.totalOrders}
+          hint={periodHint}
+          icon={Package}
+          tint="bg-blue-50 text-blue-600"
+        />
+
+        {isAdmin ? (
+          <StatCard
+            label="Ventas Totales"
+            value={formatCurrency(kpis.totalSales)}
+            hint="Valor de pedidos creados"
+            icon={TrendingUp}
+            tint="bg-green-50 text-green-600"
+          />
         ) : (
-          <div className="bg-white p-6 rounded-xl shadow-sm border flex flex-col justify-between">
-            <div className="flex justify-between items-start mb-2">
-              <div>
-                <p className="text-sm font-medium text-gray-500">Pedidos Activos</p>
-                <h3 className="text-2xl font-bold text-blue-600 mt-1">{kpis.activeOrdersCount}</h3>
-              </div>
-              <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600">
-                <Clock size={20} />
-              </div>
-            </div>
-            <div className="text-xs text-gray-500 mt-2">En proceso actualmente</div>
-          </div>
+          <StatCard
+            label="Pedidos Activos"
+            value={kpis.activeOrdersCount}
+            hint="En proceso actualmente"
+            icon={Clock}
+            tint="bg-indigo-50 text-indigo-600"
+            valueClassName="text-blue-600"
+          />
         )}
 
-        {user?.role === 'admin' ? (
-          <div className="bg-white p-6 rounded-xl shadow-sm border flex flex-col justify-between">
-            <div className="flex justify-between items-start mb-2">
-              <div>
-                <p className="text-sm font-medium text-gray-500">Cobrado (Flujo)</p>
-                <h3 className="text-2xl font-bold text-gray-900 mt-1">{formatCurrency(kpis.cashFlow)}</h3>
-              </div>
-              <div className="p-2 bg-emerald-50 rounded-lg text-emerald-600">
-                <DollarSign size={20} />
-              </div>
-            </div>
-            <div className="text-xs text-gray-500 mt-2">Pagos registrados en el periodo</div>
-          </div>
+        {isAdmin ? (
+          <StatCard
+            label="Cobrado (Flujo)"
+            value={formatCurrency(kpis.cashFlow)}
+            hint="Pagos registrados en el periodo"
+            icon={DollarSign}
+            tint="bg-emerald-50 text-emerald-600"
+          />
         ) : (
-          <div className="bg-white p-6 rounded-xl shadow-sm border flex flex-col justify-between">
-            <div className="flex justify-between items-start mb-2">
-              <div>
-                <p className="text-sm font-medium text-gray-500">Completados</p>
-                <h3 className="text-2xl font-bold text-green-600 mt-1">{kpis.completedOrders}</h3>
-              </div>
-              <div className="p-2 bg-green-50 rounded-lg text-green-600">
-                <CheckCircle2 size={20} />
-              </div>
-            </div>
-            <div className="text-xs text-gray-500 mt-2">{dateRange ? 'En el periodo seleccionado' : 'Histórico total'}</div>
-          </div>
+          <StatCard
+            label="Completados"
+            value={kpis.completedOrders}
+            hint={periodHint}
+            icon={CheckCircle2}
+            tint="bg-green-50 text-green-600"
+            valueClassName="text-green-600"
+          />
         )}
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border flex flex-col justify-between">
-          <div className="flex justify-between items-start mb-2">
-            <div>
-              <p className="text-sm font-medium text-gray-500">Deuda Global Actual</p>
-              <h3 className="text-2xl font-bold text-red-600 mt-1">{formatCurrency(pendingDebtTotal)}</h3>
-            </div>
-            <div className="p-2 bg-red-50 rounded-lg text-red-600">
-              <CreditCard size={20} />
-            </div>
-          </div>
-          <div className="text-xs text-gray-500 mt-2">Saldo pendiente total acumulado</div>
-        </div>
-      </div>
+        <StatCard
+          label="Deuda Global Actual"
+          value={formatCurrency(pendingDebtTotal)}
+          hint="Saldo pendiente total acumulado"
+          icon={CreditCard}
+          tint="bg-red-50 text-red-600"
+          valueClassName="text-red-600"
+        />
+      </section>
 
-      <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Pedidos en Curso</h2>
+      {tiles.length > 0 && (
+        <section>
+          <h2 className="mb-3 text-base font-semibold text-gray-900 md:text-lg">Accesos rápidos</h2>
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            {tiles.map((tile) => (
+              <ActionTile
+                key={tile.href}
+                href={tile.href}
+                label={tile.label}
+                description={tile.description}
+                icon={tile.icon}
+                tint={tile.tint}
+                badge={tile.href === '/orders/history' ? activeOrders.length : undefined}
+                featured={tile.href === '/orders/new'}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      <section>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-base font-semibold text-gray-900 md:text-lg">Pedidos en Curso</h2>
+          {activeOrders.length > 0 && (
+            <Link
+              href="/orders/history"
+              className="flex items-center gap-0.5 text-sm font-medium text-blue-600"
+            >
+              Ver todos
+              <ChevronRight size={16} />
+            </Link>
+          )}
+        </div>
+
         {activeOrders.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-6 lg:grid-cols-3">
             {activeOrders.map((order) => (
               <OrderCard key={order.id} order={order} />
             ))}
           </div>
         ) : (
-          <div className="text-center py-12 bg-white rounded-lg border border-dashed">
-            <p className="text-gray-500">No hay pedidos activos en este momento.</p>
+          <div className="rounded-2xl border border-dashed bg-white px-6 py-12 text-center">
+            <p className="text-sm text-gray-500">No hay pedidos activos en este momento.</p>
             {user?.role === 'dentist' && user?.verified && (
-              <Button variant="link" onClick={() => router.push('/orders/new')} className="mt-2 text-blue-600">
+              <Link href="/orders/new" className="mt-3 inline-block text-sm font-semibold text-blue-600">
                 Crear un nuevo pedido
-              </Button>
+              </Link>
             )}
           </div>
         )}
-      </div>
+      </section>
     </div>
   );
 };
 
 export default Dashboard;
-

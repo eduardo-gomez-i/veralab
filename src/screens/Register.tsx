@@ -2,12 +2,11 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
-import Image from 'next/image';
+import { AlertCircle, CheckCircle2, ChevronLeft, Eye, EyeOff, Loader2 } from 'lucide-react';
 
 const TITLES = /^(dr\.?|dra\.?|lic\.?|ing\.?|prof\.?)\s+/i;
 
@@ -15,7 +14,7 @@ function generateUsername(name: string): string {
   const cleaned = name.trim().replace(TITLES, '');
   const words = cleaned
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '') // remove accents
+    .replace(/[̀-ͯ]/g, '') // remove accents
     .toLowerCase()
     .replace(/[^a-z\s]/g, '')
     .trim()
@@ -57,6 +56,7 @@ const Register = () => {
   const [usernameTouched, setUsernameTouched] = useState(false);
   const [suggestion, setSuggestion] = useState('');
   const [checkingUsername, setCheckingUsername] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -137,143 +137,210 @@ const Register = () => {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-        <Card className="w-full max-w-md shadow-lg">
-          <CardContent className="pt-8 pb-8 text-center space-y-4">
-            <CheckCircle2 className="h-16 w-16 text-green-500 mx-auto" />
-            <h2 className="text-xl font-bold text-gray-900">Solicitud enviada</h2>
-            <p className="text-gray-600 text-sm">
-              Tu solicitud de registro fue recibida. Un administrador revisará tu cuenta
-              y recibirás un correo cuando sea aprobada.
-            </p>
-            <Link href="/login">
-              <Button variant="outline" className="mt-2">Volver al inicio de sesión</Button>
-            </Link>
-          </CardContent>
-        </Card>
+      <div className="flex min-h-[100dvh] flex-col items-center justify-center bg-white px-6 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[calc(env(safe-area-inset-top,0px)+2rem)] text-center md:bg-gray-100">
+        <div className="w-full max-w-md md:rounded-2xl md:bg-white md:p-8 md:shadow-xl">
+          <div className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-green-50">
+            <CheckCircle2 className="h-11 w-11 text-green-500" />
+          </div>
+          <h1 className="mt-6 text-2xl font-bold text-gray-900">Solicitud enviada</h1>
+          <p className="mx-auto mt-2 max-w-sm text-sm text-gray-600">
+            Tu solicitud de registro fue recibida. Un administrador revisará tu cuenta y recibirás un
+            correo cuando sea aprobada.
+          </p>
+          <Link href="/login" className="mt-8 block">
+            <Button size="xl" variant="outline">
+              Volver al inicio de sesión
+            </Button>
+          </Link>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <Card className="w-full max-w-md shadow-lg">
-        <CardHeader className="space-y-1">
-          <div className="flex justify-center">
-            <Image src="/logo.png" alt="VeraLAB" width={280} height={80} className="h-16 w-auto" priority />
+    <div className="flex min-h-[100dvh] flex-col bg-blue-600 md:items-center md:justify-center md:bg-gray-100 md:p-6">
+      <div className="flex w-full flex-1 flex-col md:max-w-md md:flex-none md:overflow-hidden md:rounded-2xl md:shadow-xl">
+        {/* Carries its own blue — see the same band in Login.tsx. */}
+        <div className="bg-blue-600 px-4 pb-8 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)] md:pt-6">
+          <Link
+            href="/login"
+            aria-label="Volver al inicio de sesión"
+            className="grid h-11 w-11 place-items-center rounded-full text-white active:bg-white/15"
+          >
+            <ChevronLeft size={24} />
+          </Link>
+          <div className="mt-2 text-center">
+            {/* Same treatment as the login screen — see Login.tsx. */}
+            <Image
+              src="/logo-mark.png"
+              alt="VeraLAB"
+              width={330}
+              height={143}
+              className="mx-auto h-12 w-auto brightness-0 invert"
+              priority
+            />
           </div>
-          <CardTitle className="text-2xl font-bold text-center text-blue-600">Crear cuenta</CardTitle>
-          <CardDescription className="text-center">
-            Completa tus datos para registrarte a la plataforma
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm flex items-center gap-2">
-                <AlertCircle size={16} />
-                <span>{error}</span>
+        </div>
+
+        <div className="flex flex-1 flex-col rounded-t-3xl bg-white px-6 pb-[max(2rem,env(safe-area-inset-bottom))] pt-8 md:rounded-none md:pb-8">
+          <h1 className="text-2xl font-bold text-gray-900">Crear cuenta</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Completa tus datos para registrarte en la plataforma
+          </p>
+
+          <form onSubmit={handleSubmit} className="mt-6 flex flex-1 flex-col">
+            <div className="space-y-4">
+              {error && (
+                <div
+                  role="alert"
+                  className="flex items-start gap-2 rounded-xl bg-red-50 p-3 text-sm text-red-600"
+                >
+                  <AlertCircle size={16} className="mt-0.5 shrink-0" />
+                  <span>{error}</span>
+                </div>
+              )}
+
+              <div className="space-y-1.5">
+                <Label htmlFor="name">Nombre completo</Label>
+                <Input
+                  id="name"
+                  name="name"
+                  placeholder="Dr. Juan Pérez"
+                  value={formData.name}
+                  onChange={handleChange}
+                  disabled={isLoading}
+                  required
+                  autoComplete="name"
+                  autoCapitalize="words"
+                  enterKeyHint="next"
+                />
               </div>
-            )}
-            <div className="space-y-2">
-              <Label htmlFor="name">Nombre completo</Label>
-              <Input
-                id="name"
-                name="name"
-                placeholder="Dr. Juan Pérez"
-                value={formData.name}
-                onChange={handleChange}
-                disabled={isLoading}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="username">
-                Usuario
-                {checkingUsername && (
-                  <span className="ml-2 text-xs text-gray-400 font-normal">buscando disponibilidad...</span>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="username" className="flex items-center gap-2">
+                  Usuario
+                  {checkingUsername && (
+                    <span className="inline-flex items-center gap-1 text-xs font-normal text-gray-400">
+                      <Loader2 size={12} className="animate-spin" />
+                      buscando disponibilidad
+                    </span>
+                  )}
+                </Label>
+                <Input
+                  id="username"
+                  name="username"
+                  placeholder="jperez"
+                  value={formData.username}
+                  onChange={handleChange}
+                  disabled={isLoading}
+                  required
+                  autoComplete="username"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  enterKeyHint="next"
+                />
+                {usernameTouched && suggestion && suggestion !== formData.username && (
+                  <p className="text-xs text-gray-500">
+                    Sugerencia:{' '}
+                    <button
+                      type="button"
+                      onClick={applySuggestion}
+                      className="font-semibold text-blue-600"
+                    >
+                      {suggestion}
+                    </button>
+                  </p>
                 )}
-              </Label>
-              <Input
-                id="username"
-                name="username"
-                placeholder="jperez"
-                value={formData.username}
-                onChange={handleChange}
-                disabled={isLoading}
-                required
-              />
-              {usernameTouched && suggestion && suggestion !== formData.username && (
-                <p className="text-xs text-gray-500">
-                  Sugerencia:{' '}
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="email">Correo electrónico</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  inputMode="email"
+                  placeholder="jperez@clinica.com"
+                  value={formData.email}
+                  onChange={handleChange}
+                  disabled={isLoading}
+                  required
+                  autoComplete="email"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  enterKeyHint="next"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="password">Contraseña</Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    name="password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Mínimo 8 caracteres"
+                    value={formData.password}
+                    onChange={handleChange}
+                    disabled={isLoading}
+                    required
+                    minLength={8}
+                    autoComplete="new-password"
+                    enterKeyHint="next"
+                    className="pr-12"
+                  />
                   <button
                     type="button"
-                    onClick={applySuggestion}
-                    className="text-blue-600 hover:underline font-medium"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                    className="absolute right-1 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-lg text-gray-500 active:bg-gray-100"
                   >
-                    {suggestion}
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
-                </p>
-              )}
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="confirmPassword">Confirmar contraseña</Label>
+                <Input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Repite tu contraseña"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  disabled={isLoading}
+                  required
+                  autoComplete="new-password"
+                  enterKeyHint="go"
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Correo electrónico</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="jperez@clinica.com"
-                value={formData.email}
-                onChange={handleChange}
-                disabled={isLoading}
-                required
-              />
+
+            <div className="mt-8 md:mt-6">
+              <Button type="submit" size="xl" disabled={isLoading}>
+                {isLoading ? (
+                  <>
+                    <Loader2 className="animate-spin" />
+                    Enviando solicitud...
+                  </>
+                ) : (
+                  'Crear cuenta'
+                )}
+              </Button>
+
+              <p className="mt-5 text-center text-sm text-gray-500">
+                ¿Ya tienes cuenta?{' '}
+                <Link href="/login" className="font-semibold text-blue-600">
+                  Iniciar sesión
+                </Link>
+              </p>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Contraseña</Label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                placeholder="••••••••"
-                value={formData.password}
-                onChange={handleChange}
-                disabled={isLoading}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirmar contraseña</Label>
-              <Input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                placeholder="••••••••"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                disabled={isLoading}
-                required
-              />
-            </div>
-            <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Enviando solicitud...
-                </>
-              ) : (
-                'Registrar'
-              )}
-            </Button>
-            <p className="text-center text-sm text-gray-500">
-              ¿Ya tienes cuenta?{' '}
-              <Link href="/login" className="text-blue-600 hover:underline font-medium">
-                Iniciar sesión
-              </Link>
-            </p>
           </form>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 };

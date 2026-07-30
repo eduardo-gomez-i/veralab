@@ -1,7 +1,37 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx prisma:*)"
+      "Bash(npx prisma:*)",
+      "PowerShell(Add-Type -AssemblyName System.Drawing; $i=[System.Drawing.Image]::FromFile\\(\"C:\\\\wamp64\\\\www\\\\pedidos\\\\public\\\\logo.png\"\\); \"$\\($i.Width\\)x$\\($i.Height\\)\"; $i.Dispose\\(\\))",
+      "Bash(perl -CSD -i -pe 's/\\\\Q.replace\\(\\\\E\\\\/\\\\[\\\\x{0300}-\\\\x{036f}\\\\]\\\\/g/.replace\\(\\\\/[\\\\\\\\u0300-\\\\\\\\u036f]\\\\/g/' src/screens/Register.tsx)",
+      "PowerShell(npx tsc -b --noEmit 2>&1 | Select-Object -First 40)",
+      "PowerShell(npx next build 2>&1 | Select-Object -Last 60)",
+      "PowerShell(npx next dev --port 3111 2>&1)",
+      "PowerShell(Get-NetTCPConnection *)",
+      "PowerShell(Get-CimInstance *)",
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__new_page",
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__resize_page",
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__take_screenshot",
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__evaluate_script",
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__navigate_page",
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__list_console_messages",
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__take_snapshot",
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__fill_form",
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__click",
+      "PowerShell(npx tsc -b --noEmit 2>&1 | Select-Object -First 20)",
+      "PowerShell(npx prisma migrate status 2>&1 | Select-Object -Last 25)",
+      "PowerShell(npx tsx \"C:\\\\Users\\\\Eduardo\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--wamp64-www-pedidos\\\\6a02823c-6699-4d7e-86b7-2e0c52ab7aeb\\\\scratchpad\\\\check-col.mjs\" 2>&1 | Select-Object -Last 20)",
+      "PowerShell(npx tsx .tmp-check-col.mjs 2>&1 | Select-Object -Last 20)",
+      "PowerShell(npx tsc -b --noEmit 2>&1 | Select-Object -First 20; \"--- tsc done ---\"; npx next build 2>&1 | Select-Object -Last 12)",
+      "PowerShell(npm audit *)",
+      "PowerShell(npm ls *)",
+      "PowerShell(git status --short; \"--- branch ---\"; git rev-parse --abbrev-ref HEAD)",
+      "PowerShell(npm install *)",
+      "PowerShell(node -e \"const s=require\\('sharp'\\); console.log\\('sharp', s.versions.sharp, '| libvips', s.versions.vips\\); s\\({create:{width:8,height:8,channels:3,background:'#fff'}}\\).png\\(\\).toBuffer\\(\\).then\\(b=>console.log\\('encode OK', b.length, 'bytes'\\)\\).catch\\(e=>{console.error\\('FAIL', e.message\\); process.exit\\(1\\)}\\)\")",
+      "PowerShell(npm view *)",
+      "PowerShell(node -e \"const e=require\\('brace-expansion'\\); console.log\\('typeof export:', typeof e\\); console.log\\('call result:', JSON.stringify\\(e\\('a{b,c}d'\\)\\)\\)\")",
+      "PowerShell(npm run *)",
+      "PowerShell(npm *)"
     ]
   }
 }

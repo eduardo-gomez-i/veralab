@@ -14,6 +14,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import { useIsDesktop } from "@/hooks/use-media-query"
 
 interface DatePickerWithRangeProps {
   className?: string
@@ -26,6 +27,9 @@ export function DatePickerWithRange({
   date,
   setDate,
 }: DatePickerWithRangeProps) {
+  // Two months side by side do not fit a phone; show one and go full width.
+  const isDesktop = useIsDesktop()
+
   return (
     <div className={cn("grid gap-2", className)}>
       <Popover>
@@ -34,7 +38,7 @@ export function DatePickerWithRange({
             id="date"
             variant={"outline"}
             className={cn(
-              "w-[300px] justify-start text-left font-normal",
+              "w-full justify-start text-left font-normal md:w-[300px]",
               !date && "text-muted-foreground"
             )}
           >
@@ -53,14 +57,14 @@ export function DatePickerWithRange({
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
+        <PopoverContent className="w-auto max-w-[calc(100vw-2rem)] overflow-x-auto p-0" align="start">
           <Calendar
             initialFocus
             mode="range"
             defaultMonth={date?.from}
             selected={date}
             onSelect={setDate}
-            numberOfMonths={2}
+            numberOfMonths={isDesktop ? 2 : 1}
           />
         </PopoverContent>
       </Popover>

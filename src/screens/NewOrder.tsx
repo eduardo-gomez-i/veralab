@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useOrders } from '@/contexts/OrderContext';
 import { ProsthesisType, Material, Priority } from '@/types';
@@ -9,10 +9,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, ArrowLeft } from 'lucide-react';
+import { ToothPicker } from '@/components/orders/ToothPicker';
+import { ArrowLeft, ArrowRight, Check, Loader2, Paperclip } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { DENTAL_PIECES, getServiceCategory, LAB_SERVICE_CATALOG } from '@/lib/order-catalog';
+import { useIsDesktop } from '@/hooks/use-media-query';
+import { getServiceCategory, LAB_SERVICE_CATALOG } from '@/lib/order-catalog';
+import { cn } from '@/lib/utils';
 
 interface NewOrderFormData {
   patientName: string;
@@ -26,12 +28,27 @@ interface NewOrderFormData {
   priority: Priority;
 }
 
+const STEPS = [
+  { title: 'Paciente', caption: 'Datos y fecha de entrega' },
+  { title: 'Servicio', caption: 'Área, servicio y material' },
+  { title: 'Piezas', caption: 'Selecciona las piezas dentales' },
+  { title: 'Detalles', caption: 'Especificaciones y adjuntos' },
+];
+
+const tomorrow = () => {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  return d.toISOString().split('T')[0];
+};
+
 const NewOrder = () => {
   const router = useRouter();
   const { addOrder } = useOrders();
   const { toast } = useToast();
+  const isDesktop = useIsDesktop();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [attachment, setAttachment] = useState<File | null>(null);
+  const [step, setStep] = useState(0);
   const defaultCategory = LAB_SERVICE_CATALOG[0];
 
   const [formData, setFormData] = useState<NewOrderFormData>({
@@ -62,27 +79,16 @@ const NewOrder = () => {
     }));
   };
 
-  const handlePieceToggle = (piece: string) => {
-    const currentPieces = formData.dentalPieces
-      ? formData.dentalPieces.split(',').map((item) => item.trim()).filter(Boolean)
-      : [];
+  // Only the first step has required fields; the rest are optional details.
+  const stepIsValid = useMemo(() => {
+    if (step !== 0) return true;
+    return Boolean(formData.patientName.trim() && formData.deliveryDate);
+  }, [step, formData.patientName, formData.deliveryDate]);
 
-    const nextPieces = currentPieces.includes(piece)
-      ? currentPieces.filter((item) => item !== piece)
-      : [...currentPieces, piece].sort((a, b) => Number(a) - Number(b));
+  const canSubmit = Boolean(formData.patientName.trim() && formData.deliveryDate);
+  const isLastStep = step === STEPS.length - 1;
 
-    setFormData((prev) => ({
-      ...prev,
-      dentalPieces: nextPieces.join(', '),
-    }));
-  };
-
-  const selectedPieces = formData.dentalPieces
-    ? formData.dentalPieces.split(',').map((item) => item.trim()).filter(Boolean)
-    : [];
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const submit = async () => {
     setIsSubmitting(true);
 
     try {
@@ -116,57 +122,106 @@ const NewOrder = () => {
     }
   };
 
-  return (
-    <div className="max-w-3xl mx-auto">
-      <Button variant="ghost" onClick={() => router.back()} className="mb-4 pl-0 hover:bg-transparent hover:text-blue-600">
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        Volver
-      </Button>
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl text-blue-600">Nuevo Pedido de Laboratorio</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-4">
-              <h3 className="font-semibold text-lg border-b pb-2">Datos del Paciente</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="patientName">Nombre Completo del Paciente</Label>
+    // On mobile the form spans several steps — advance instead of submitting.
+    if (!isDesktop && !isLastStep) {
+      if (stepIsValid) setStep((prev) => prev + 1);
+      return;
+    }
+
+    if (!canSubmit) {
+      setStep(0);
+      return;
+    }
+
+    await submit();
+  };
+
+  // Desktop keeps the single long form; mobile shows one step at a time.
+  const showStep = (index: number) => isDesktop || step === index;
+
+  return (
+    <div className="mx-auto max-w-3xl">
+      <div className="hidden md:block">
+        <Button
+          variant="ghost"
+          onClick={() => router.back()}
+          className="mb-4 pl-0 hover:bg-transparent hover:text-blue-600"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Volver
+        </Button>
+      </div>
+
+      <div className="md:rounded-xl md:border md:bg-white md:p-6 md:shadow">
+        <div className="md:mb-6">
+          <h1 className="text-xl font-bold text-gray-900 md:text-2xl md:text-blue-600">
+            Nuevo Pedido de Laboratorio
+          </h1>
+          <p className="mt-1 text-sm text-gray-500 md:hidden">
+            Paso {step + 1} de {STEPS.length} · {STEPS[step].caption}
+          </p>
+        </div>
+
+        {/* Step indicator (mobile only). */}
+        <div className="mt-4 flex gap-1.5 md:hidden" aria-hidden="true">
+          {STEPS.map((s, index) => (
+            <span
+              key={s.title}
+              className={cn(
+                'h-1.5 flex-1 rounded-full transition-colors',
+                index <= step ? 'bg-blue-600' : 'bg-gray-200'
+              )}
+            />
+          ))}
+        </div>
+
+        <form onSubmit={handleSubmit} className="mt-6 space-y-6 pb-28 md:pb-0">
+          {showStep(0) && (
+            <section className="space-y-4">
+              <h2 className="hidden border-b pb-2 text-lg font-semibold md:block">
+                Datos del Paciente
+              </h2>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="patientName">Nombre completo del paciente</Label>
                   <Input
                     id="patientName"
                     value={formData.patientName}
                     onChange={(e) => handleChange('patientName', e.target.value)}
                     placeholder="Ej. Ana García"
+                    autoCapitalize="words"
+                    enterKeyHint="next"
                     required
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="deliveryDate">Fecha de Entrega Requerida</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="deliveryDate">Fecha de entrega requerida</Label>
                   <Input
                     id="deliveryDate"
                     type="date"
                     value={formData.deliveryDate}
                     onChange={(e) => handleChange('deliveryDate', e.target.value)}
                     required
-                    min={(() => {
-                      const d = new Date();
-                      d.setDate(d.getDate() + 1);
-                      return d.toISOString().split('T')[0];
-                    })()}
+                    min={tomorrow()}
                   />
                 </div>
               </div>
-            </div>
+            </section>
+          )}
 
-            <div className="space-y-4">
-              <h3 className="font-semibold text-lg border-b pb-2">Servicio solicitado</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
+          {showStep(1) && (
+            <section className="space-y-4">
+              <h2 className="hidden border-b pb-2 text-lg font-semibold md:block">
+                Servicio solicitado
+              </h2>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <div className="space-y-1.5">
                   <Label htmlFor="prosthesisType">Área del laboratorio</Label>
                   <Select value={formData.prosthesisType} onValueChange={handleCategoryChange}>
-                    <SelectTrigger>
+                    <SelectTrigger id="prosthesisType">
                       <SelectValue placeholder="Seleccione área" />
                     </SelectTrigger>
                     <SelectContent>
@@ -179,10 +234,13 @@ const NewOrder = () => {
                   </Select>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <Label htmlFor="serviceName">Servicio</Label>
-                  <Select value={formData.serviceName} onValueChange={(value) => handleChange('serviceName', value)}>
-                    <SelectTrigger>
+                  <Select
+                    value={formData.serviceName}
+                    onValueChange={(value) => handleChange('serviceName', value)}
+                  >
+                    <SelectTrigger id="serviceName">
                       <SelectValue placeholder="Seleccione servicio" />
                     </SelectTrigger>
                     <SelectContent>
@@ -195,10 +253,13 @@ const NewOrder = () => {
                   </Select>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <Label htmlFor="material">Material / variante</Label>
-                  <Select value={formData.material} onValueChange={(value) => handleChange('material', value)}>
-                    <SelectTrigger>
+                  <Select
+                    value={formData.material}
+                    onValueChange={(value) => handleChange('material', value)}
+                  >
+                    <SelectTrigger id="material">
                       <SelectValue placeholder="Seleccione material" />
                     </SelectTrigger>
                     <SelectContent>
@@ -212,69 +273,66 @@ const NewOrder = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="priority">Prioridad</Label>
-                  <Select value={formData.priority} onValueChange={(value) => handleChange('priority', value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccione prioridad" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="baja">Baja</SelectItem>
-                      <SelectItem value="normal">Normal</SelectItem>
-                      <SelectItem value="alta">Alta</SelectItem>
-                      <SelectItem value="urgente">Urgente</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="dentalPieces">Piezas dentales</Label>
-                  <Input
-                    id="dentalPieces"
-                    value={formData.dentalPieces}
-                    onChange={(e) => handleChange('dentalPieces', e.target.value)}
-                    placeholder="Ej. 11, 12, 21"
-                  />
-                </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="priority">Prioridad</Label>
+                <Select
+                  value={formData.priority}
+                  onValueChange={(value) => handleChange('priority', value)}
+                >
+                  <SelectTrigger id="priority" className="md:w-1/2">
+                    <SelectValue placeholder="Seleccione prioridad" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="baja">Baja</SelectItem>
+                    <SelectItem value="normal">Normal</SelectItem>
+                    <SelectItem value="alta">Alta</SelectItem>
+                    <SelectItem value="urgente">Urgente</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
+            </section>
+          )}
 
-              <div className="space-y-3">
-                <Label>Selector rápido de piezas</Label>
-                <div className="space-y-2 rounded-md border p-3">
-                  {DENTAL_PIECES.map((row, rowIndex) => (
-                    <div key={rowIndex} className="grid grid-cols-8 gap-2">
-                      {row.map((piece) => (
-                        <button
-                          key={piece}
-                          type="button"
-                          className={`rounded-md border px-2 py-2 text-sm font-medium transition-colors ${
-                            selectedPieces.includes(piece)
-                              ? 'border-blue-600 bg-blue-50 text-blue-700'
-                              : 'border-gray-200 bg-white text-gray-700 hover:border-blue-300 hover:text-blue-700'
-                          }`}
-                          onClick={() => handlePieceToggle(piece)}
-                        >
-                          {piece}
-                        </button>
-                      ))}
-                    </div>
-                  ))}
-                </div>
+          {showStep(2) && (
+            <section className="space-y-4">
+              <h2 className="hidden border-b pb-2 text-lg font-semibold md:block">
+                Piezas dentales
+              </h2>
+              <div className="space-y-1.5">
+                <Label htmlFor="dentalPieces">Piezas seleccionadas</Label>
+                <Input
+                  id="dentalPieces"
+                  value={formData.dentalPieces}
+                  onChange={(e) => handleChange('dentalPieces', e.target.value)}
+                  placeholder="Ej. 11, 12, 21"
+                  inputMode="numeric"
+                />
               </div>
+              <ToothPicker
+                value={formData.dentalPieces}
+                onChange={(value) => handleChange('dentalPieces', value)}
+              />
+            </section>
+          )}
 
-              <div className="space-y-2">
+          {showStep(3) && (
+            <section className="space-y-4">
+              <h2 className="hidden border-b pb-2 text-lg font-semibold md:block">
+                Detalles adicionales
+              </h2>
+              <div className="space-y-1.5">
                 <Label htmlFor="specifications">Especificaciones técnicas</Label>
                 <Textarea
                   id="specifications"
                   value={formData.specifications}
                   onChange={(e) => handleChange('specifications', e.target.value)}
                   placeholder="Ej. color, tipo de terminado, indicaciones clínicas, antagonista, diseño o requerimientos del laboratorio..."
-                  className="min-h-[100px]"
+                  className="min-h-[110px]"
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="notes">Notas Adicionales</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="notes">Notas adicionales</Label>
                 <Textarea
                   id="notes"
                   value={formData.notes}
@@ -283,39 +341,90 @@ const NewOrder = () => {
                 />
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label htmlFor="attachment">Adjuntar archivo (opcional)</Label>
-                <Input
+                <label
+                  htmlFor="attachment"
+                  className="flex min-h-touch cursor-pointer items-center gap-3 rounded-xl border border-dashed p-4 text-sm text-gray-600 active:bg-gray-50"
+                >
+                  <Paperclip size={18} className="shrink-0 text-blue-600" />
+                  <span className="min-w-0 flex-1 truncate">
+                    {attachment ? attachment.name : 'Toca para elegir una imagen, PDF o DOCX'}
+                  </span>
+                </label>
+                <input
                   id="attachment"
                   type="file"
+                  className="sr-only"
                   accept="image/*,.pdf,.docx"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0] || null;
-                    setAttachment(file);
-                  }}
+                  onChange={(e) => setAttachment(e.target.files?.[0] || null)}
                 />
-                <p className="text-xs text-gray-500">Formatos permitidos: Imágenes, PDF, DOCX</p>
+                {attachment && (
+                  <button
+                    type="button"
+                    onClick={() => setAttachment(null)}
+                    className="text-xs font-semibold text-red-600"
+                  >
+                    Quitar archivo
+                  </button>
+                )}
               </div>
-            </div>
+            </section>
+          )}
 
-            <div className="flex justify-end gap-4 pt-4">
-              <Button type="button" variant="outline" onClick={() => router.back()}>
-                Cancelar
+          {/* Desktop actions */}
+          <div className="hidden justify-end gap-4 pt-4 md:flex">
+            <Button type="button" variant="outline" onClick={() => router.back()}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creando Pedido...
+                </>
+              ) : (
+                'Crear Pedido'
+              )}
+            </Button>
+          </div>
+
+          {/* Mobile action bar, docked just above the tab bar. */}
+          <div className="fixed inset-x-0 bottom-tabbar-safe z-30 border-t bg-white/95 px-4 py-3 backdrop-blur md:hidden">
+            <div className="flex gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                className="h-12 flex-1"
+                onClick={() => (step === 0 ? router.back() : setStep((prev) => prev - 1))}
+                disabled={isSubmitting}
+              >
+                <ArrowLeft size={18} />
+                {step === 0 ? 'Cancelar' : 'Atrás'}
               </Button>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700" disabled={isSubmitting}>
+
+              <Button type="submit" className="h-12 flex-1" disabled={isSubmitting || !stepIsValid}>
                 {isSubmitting ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creando Pedido...
+                    <Loader2 className="animate-spin" />
+                    Creando...
+                  </>
+                ) : isLastStep ? (
+                  <>
+                    <Check size={18} />
+                    Crear pedido
                   </>
                 ) : (
-                  'Crear Pedido'
+                  <>
+                    Siguiente
+                    <ArrowRight size={18} />
+                  </>
                 )}
               </Button>
             </div>
-          </form>
-        </CardContent>
-      </Card>
+          </div>
+        </form>
+      </div>
     </div>
   );
 };
